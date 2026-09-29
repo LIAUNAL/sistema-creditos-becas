@@ -8,6 +8,7 @@ Thumbs.db
 
 # Local machine-specific configuration and personal overrides (excluded from version control)
 .un-specweaver/local.json
+.un-specweaver/dashboard.html
 *.user.toml
 
 # Dependencies & targets
