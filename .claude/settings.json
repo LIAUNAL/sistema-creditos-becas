@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/carlos/.local/bin/graphify hook-guard search"
+            "command": "graphify hook-guard search"
           }
         ]
       },
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/carlos/.local/bin/graphify hook-guard read"
+            "command": "graphify hook-guard read"
           }
         ]
       }

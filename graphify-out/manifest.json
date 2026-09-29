@@ -1,0 +1,22 @@
+{
+  ".mcp.json": {
+    "mtime": 1790567763.812246,
+    "ast_hash": "b58c8a70f4d787727ee18f5f9f1f09f8",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1790570972.3685632,
+    "ast_hash": "2db83fdce977f68646bf1a33173ecb0c",
+    "semantic_hash": ""
+  },
+  "src/solicitud-credito/registroSolicitudCredito.js": {
+    "mtime": 1790570936.9081135,
+    "ast_hash": "6c4ce591c428329a0388bb85e211ff46",
+    "semantic_hash": ""
+  },
+  "src/solicitud-credito/registroSolicitudCredito.test.js": {
+    "mtime": 1790570955.108344,
+    "ast_hash": "45664259f873940a4932e37bbe813449",
+    "semantic_hash": ""
+  }
+}

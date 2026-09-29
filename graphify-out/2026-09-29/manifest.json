@@ -1,0 +1,32 @@
+{
+  ".gemini/antigravity-cli/mcp_config.json": {
+    "mtime": 1790567768.2963154,
+    "ast_hash": "3cba6e5e751ee4331ced0879e85ad796",
+    "semantic_hash": ""
+  },
+  ".gemini/antigravity-cli/plugins/gentle-ai-engram/hooks.json": {
+    "mtime": 1790567768.3033154,
+    "ast_hash": "582be76e1d2513aff7a886339d390cbc",
+    "semantic_hash": ""
+  },
+  ".gemini/antigravity-cli/plugins/gentle-ai-engram/mcp_config.json": {
+    "mtime": 1790567768.3013155,
+    "ast_hash": "4140941276ac05295ef0060abf88549e",
+    "semantic_hash": ""
+  },
+  ".gemini/antigravity-cli/plugins/gentle-ai-engram/plugin.json": {
+    "mtime": 1790567768.300815,
+    "ast_hash": "4a000dc1737711afe3b7a8148dc2cc5c",
+    "semantic_hash": ""
+  },
+  ".gemini/antigravity-cli/settings.json": {
+    "mtime": 1790567768.2983155,
+    "ast_hash": "8a80554c91d9fca8acb82f023de02f11",
+    "semantic_hash": ""
+  },
+  ".mcp.json": {
+    "mtime": 1790567763.812246,
+    "ast_hash": "b58c8a70f4d787727ee18f5f9f1f09f8",
+    "semantic_hash": ""
+  }
+}
