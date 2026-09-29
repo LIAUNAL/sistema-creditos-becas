@@ -1,0 +1,270 @@
+{
+  "source": "_bmad-output/planning-artifacts/epics.md",
+  "project": "Epics y Stories — Sistema de Créditos y Becas",
+  "lang": "es",
+  "requirements": {
+    "functional": [],
+    "nonFunctional": [],
+    "additional": [],
+    "ux": []
+  },
+  "changes": [
+    {
+      "changeId": "e1s1-registro-de-solicitud-de-credito-con-datos-socio",
+      "capability": "solicitud-de-credito",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 1,
+        "epicTitle": "Solicitud de crédito",
+        "story": "1.1",
+        "storyTitle": "Registro de solicitud de crédito con datos socioeconómicos"
+      },
+      "requirements": [
+        "FR-001"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-001"
+        ],
+        "epic": []
+      },
+      "requirementName": "Registro de solicitud de crédito con datos socioeconómicos",
+      "scenarios": 3
+    },
+    {
+      "changeId": "e1s2-validacion-de-documentos-requeridos-antes-de-env",
+      "capability": "solicitud-de-credito",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 1,
+        "epicTitle": "Solicitud de crédito",
+        "story": "1.2",
+        "storyTitle": "Validación de documentos requeridos antes de enviar a revisión"
+      },
+      "requirements": [
+        "FR-002",
+        "FR-004"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-002",
+          "FR-004"
+        ],
+        "epic": []
+      },
+      "requirementName": "Validación de documentos requeridos antes de enviar a revisión",
+      "scenarios": 3
+    },
+    {
+      "changeId": "e1s3-revision-y-decision-del-asesor-financiero",
+      "capability": "solicitud-de-credito",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 1,
+        "epicTitle": "Solicitud de crédito",
+        "story": "1.3",
+        "storyTitle": "Revisión y decisión del asesor financiero"
+      },
+      "requirements": [
+        "FR-003",
+        "FR-004"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-003",
+          "FR-004"
+        ],
+        "epic": []
+      },
+      "requirementName": "Revisión y decisión del asesor financiero",
+      "scenarios": 3
+    },
+    {
+      "changeId": "e2s1-calculo-de-puntaje-de-elegibilidad-de-beca",
+      "capability": "evaluacion-de-elegibilidad-para-becas",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 2,
+        "epicTitle": "Evaluación de elegibilidad para becas",
+        "story": "2.1",
+        "storyTitle": "Cálculo de puntaje de elegibilidad de beca"
+      },
+      "requirements": [
+        "FR-010"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-010"
+        ],
+        "epic": []
+      },
+      "requirementName": "Cálculo de puntaje de elegibilidad de beca",
+      "scenarios": 2
+    },
+    {
+      "changeId": "e2s2-revision-de-casos-limitrofes-por-el-comite-de-be",
+      "capability": "evaluacion-de-elegibilidad-para-becas",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 2,
+        "epicTitle": "Evaluación de elegibilidad para becas",
+        "story": "2.2",
+        "storyTitle": "Revisión de casos limítrofes por el comité de becas"
+      },
+      "requirements": [
+        "FR-011"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-011"
+        ],
+        "epic": []
+      },
+      "requirementName": "Revisión de casos limítrofes por el comité de becas",
+      "scenarios": 3
+    },
+    {
+      "changeId": "e2s3-consulta-del-estado-de-evaluacion-por-el-estudia",
+      "capability": "evaluacion-de-elegibilidad-para-becas",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 2,
+        "epicTitle": "Evaluación de elegibilidad para becas",
+        "story": "2.3",
+        "storyTitle": "Consulta del estado de evaluación por el estudiante"
+      },
+      "requirements": [
+        "FR-012"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-012"
+        ],
+        "epic": []
+      },
+      "requirementName": "Consulta del estado de evaluación por el estudiante",
+      "scenarios": 2
+    },
+    {
+      "changeId": "e3s1-calendario-de-desembolso-para-credito-aprobado",
+      "capability": "desembolso-y-seguimiento",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 3,
+        "epicTitle": "Desembolso y seguimiento",
+        "story": "3.1",
+        "storyTitle": "Calendario de desembolso para crédito aprobado"
+      },
+      "requirements": [
+        "FR-020"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-020"
+        ],
+        "epic": []
+      },
+      "requirementName": "Calendario de desembolso para crédito aprobado",
+      "scenarios": 2
+    },
+    {
+      "changeId": "e3s2-notificacion-de-desembolso-al-estudiante",
+      "capability": "desembolso-y-seguimiento",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 3,
+        "epicTitle": "Desembolso y seguimiento",
+        "story": "3.2",
+        "storyTitle": "Notificación de desembolso al estudiante"
+      },
+      "requirements": [
+        "FR-021"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-021"
+        ],
+        "epic": []
+      },
+      "requirementName": "Notificación de desembolso al estudiante",
+      "scenarios": 2
+    },
+    {
+      "changeId": "e3s3-marcado-de-desembolso-vencido",
+      "capability": "desembolso-y-seguimiento",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 3,
+        "epicTitle": "Desembolso y seguimiento",
+        "story": "3.3",
+        "storyTitle": "Marcado de desembolso vencido"
+      },
+      "requirements": [
+        "FR-022"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-022"
+        ],
+        "epic": []
+      },
+      "requirementName": "Marcado de desembolso vencido",
+      "scenarios": 2
+    },
+    {
+      "changeId": "e4s1-reporte-consolidado-de-creditos-y-becas-por-peri",
+      "capability": "reportes-para-direccion-academica",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 4,
+        "epicTitle": "Reportes para dirección académica",
+        "story": "4.1",
+        "storyTitle": "Reporte consolidado de créditos y becas por periodo"
+      },
+      "requirements": [
+        "FR-030"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-030"
+        ],
+        "epic": []
+      },
+      "requirementName": "Reporte consolidado de créditos y becas por periodo",
+      "scenarios": 2
+    },
+    {
+      "changeId": "e4s2-alerta-de-tasa-de-mora-sobre-el-umbral-definido",
+      "capability": "reportes-para-direccion-academica",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 4,
+        "epicTitle": "Reportes para dirección académica",
+        "story": "4.2",
+        "storyTitle": "Alerta de tasa de mora sobre el umbral definido"
+      },
+      "requirements": [
+        "FR-031"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-031"
+        ],
+        "epic": []
+      },
+      "requirementName": "Alerta de tasa de mora sobre el umbral definido",
+      "scenarios": 2
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "sistema-creditos-becas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema de Créditos y Becas — implementación de stories del backlog en openspec/changes",
+  "scripts": {
+    "test": "node --test src/"
+  }
+}

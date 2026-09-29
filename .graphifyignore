@@ -1,0 +1,16 @@
+# >>> un-specweaver >>>
+# El grafo de graphify es de CODIGO. Los docs tienen otro dueno: PRD, specs, Engram.
+_bmad-output/
+openspec/
+docs/
+.un-specweaver/
+.engram/
+*.md
+node_modules/
+_bmad/
+.claude/
+.opencode/
+.agents/
+.config/
+graphify-out/
+# <<< un-specweaver <<<
