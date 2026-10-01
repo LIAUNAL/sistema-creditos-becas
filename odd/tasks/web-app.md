@@ -25,7 +25,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 - [x] T5 (P5) Visibility and ownership: assignments, default rule for Q5, policy functions, NFR-003 tests
 - [x] T6 (P6) Collecting notifier + outbox + transaction helper (C2 design), two atomicity tests
 - [x] T7 (P7) Persistence for solicitud-credito modules, write-back per D2 (size:exception candidate)
-- [ ] T8 (P8) Student credit flow (1.1, 1.2)
+- [x] T8 (P8) Student credit flow (1.1, 1.2)
 - [ ] T9 (P9) Advisor flow (1.3)
 - [ ] T10 (P10) Loan terms + calendar generation (3.1) (size:exception candidate)
 - [ ] T11 (P11) Scholarship part 1 (2.1): applications, eligibility run, `scholarship_awards`
@@ -90,5 +90,12 @@ Native review assessed per work-unit commit; the user's consent per candidate is
   - Flaky test found by the parent (not by the writer): P4's `seguridad.test.js` "token ... alterado" failed ~1 in 16 runs because it replaced the last hex char of the CSRF token with `0` (identical when the token already ended in `0`). Test bug, not a CSRF hole. Fixed (always pick a different character), verified 40 consecutive runs + 3 full-suite runs, committed separately.
   - Size: far above 400 lines (mostly tests) -> declared `size:exception` candidate (plan forecast ~440).
 
+- T7 commits e5f5a95 (flaky test fix) + be1502e.
+- T8 (delegated writer, branch `feat/e5s8-flujo-estudiante`): RED observed (`Cannot find module './contextoApp'` / `'./aplicacionWeb'`), GREEN 299/299 on two consecutive full runs (276 + 23 new); `openspec validate e5s8 --strict` valid. Only ONE existing test changed: `autenticacion.test.js` form-login test 200 -> 303 + `Location: /solicitudes` (required by the P8 redirect; all JSON login tests untouched). Parent independent real run with curl + cookie jars on a temp DB: anonymous `/solicitudes` -> 303 to `/login`; `/login` 200; form login 303; create -> 303 to detail; 3 document attaches 303; `<script>alert(1)</script>` in the occupation field rendered escaped (no raw tag); submit 303; list shows `pendiente_revision`; resubmit 409; POST without `_csrf` 403; advisor on `/solicitudes` and on the student's detail 403; CSP + X-Frame-Options + nosniff present on HTML; outbox has one `envio` row for `estudiante`; SIGTERM exit 0.
+  - Design: `src/app/` (`contextoApp.js` builds collector + SQLite repos + the 3 real modules + asignaciones + politicas once; `servicioSolicitudes.js` use cases each in `ejecutarCasoDeUso` with its own unit of work), `src/web/` pages (`vistas.js`, `paginas.js`, `aplicacionWeb.js`, `estilos.css` served by an explicit route `GET /estilos.css`, no generic static server), `GET /login` page, `GET /` redirect, form login redirects 303 (JSON login keeps 200). Statuses: duplicate request 409; validation/missing docs/invalid format 400; resend on an already sent request 409; other student's request 404; no session -> redirect to `/login`; CSRF failure stays the JSON 403.
+  - Field rules chosen (spec silent): estrato integer 1-6, dependents 0-30, income non-negative, file names without path separators/control chars; the login form carries no CSRF token by design (P4: origin check on `/login`).
+  - Known smell: `src/app` imports `crearPoliticas` from `src/web` (layering: politicas should live in `src/app`); `HEAD /estilos.css` -> 404 (router only registers GET).
+  - Size ~1,350 lines (views, tests, CSS) -> `size:exception` for the PR slice (forecast was ~380).
+
 ## Next step
-T8 (P8, change `e5s8-...`) student credit flow (1.1, 1.2) via delegated writer on a new branch stacked on `feat/e5s7-persistencia-solicitudes`.
+T9 (P9, change `e5s9-...`) advisor flow (1.3): queue, claim, decide, via delegated writer on a new branch stacked on `feat/e5s8-flujo-estudiante`.

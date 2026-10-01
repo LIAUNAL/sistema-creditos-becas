@@ -97,14 +97,18 @@ test('Scenario: credenciales correctas crean una sesión en SQLite y el identifi
   assert.strictEqual((await fetch(`${base}/me`, { headers: { Cookie: cookie2 } })).status, 200);
 });
 
-test('login acepta application/x-www-form-urlencoded', async () => {
+// Story 5.8: un formulario del navegador recibe post/redirect/get (303 a /solicitudes) con su
+// cookie de sesion; el login con JSON conserva su respuesta 200 (ver pruebas anteriores).
+test('login acepta application/x-www-form-urlencoded y redirige 303 a /solicitudes', async () => {
   const { base } = await levantar();
   const respuesta = await fetch(`${base}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'nombre_usuario=estudiante&contrasena=clave-estudiante',
+    redirect: 'manual',
   });
-  assert.strictEqual(respuesta.status, 200);
+  assert.strictEqual(respuesta.status, 303);
+  assert.strictEqual(respuesta.headers.get('location'), '/solicitudes');
   assert.ok(cookieDe(respuesta));
 });
 

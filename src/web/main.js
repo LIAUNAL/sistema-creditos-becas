@@ -5,7 +5,7 @@ const { abrirBaseDeDatos } = require('../infra/baseDeDatos');
 const { ejecutarMigraciones } = require('../infra/migraciones');
 const { crearAuditoria } = require('../infra/auditoria');
 const { relojSistema } = require('../infra/reloj');
-const { crearAutenticacion } = require('./autenticacion');
+const { crearAplicacionWeb } = require('./aplicacionWeb');
 const { crearCsrf } = require('./csrf');
 
 async function main() {
@@ -21,13 +21,14 @@ async function main() {
   if (csrf.usaSecretoAleatorio) {
     console.warn('CSRF_SECRET no definido: secreto aleatorio por proceso (solo una instancia; los tokens caducan al reiniciar)');
   }
-  const autenticacion = crearAutenticacion({ db, reloj: relojSistema, auditoria, csrf });
+  // Identidad + casos de uso (repositorios SQLite, colector, modulos reales) + paginas del estudiante.
+  const aplicacion = crearAplicacionWeb({ db, reloj: relojSistema, csrf, auditoria });
 
   const { puerto: escucha, cerrar } = await iniciarServidor({
     puerto,
     host: '0.0.0.0',
-    rutas: [...autenticacion.rutas],
-    ...autenticacion.opcionesServidor,
+    rutas: aplicacion.rutas,
+    ...aplicacion.opcionesServidor,
   });
   console.log(`Servidor escuchando en el puerto ${escucha}`);
 
