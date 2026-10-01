@@ -8,6 +8,7 @@ const { crearAuditoria } = require('../infra/auditoria');
 const { sembrarUsuarios } = require('../infra/sembrado');
 const { iniciarServidor } = require('./servidor');
 const { crearAutenticacion } = require('./autenticacion');
+const { crearCsrf } = require('./csrf');
 
 const CLAVES = {
   SEED_PASSWORD_ESTUDIANTE: 'clave-estudiante',
@@ -35,13 +36,14 @@ async function levantar(opciones = {}) {
   await sembrarUsuarios({ db, entorno: CLAVES });
   const reloj = crearRelojManual();
   const auditoria = crearAuditoria({ db, reloj });
-  const auth = crearAutenticacion({ db, reloj, auditoria, ...opciones });
+  const csrf = crearCsrf({ secreto: 'secreto-de-prueba-0123456789' });
+  const auth = crearAutenticacion({ db, reloj, auditoria, csrf, ...opciones });
   const rutas = [
     ...auth.rutas,
     ['GET', '/solo-asesor', auth.requerirRol('asesor_financiero')(({ usuario }) => ({ ok: usuario.rol }))],
     ['GET', '/protegida', auth.requerirSesion(({ usuario }) => ({ ok: usuario.nombre_usuario }))],
   ];
-  const servidor = await iniciarServidor({ puerto: 0, rutas });
+  const servidor = await iniciarServidor({ puerto: 0, rutas, ...auth.opcionesServidor });
   abiertos.push(servidor);
   const base = `http://127.0.0.1:${servidor.puerto}`;
   return { db, reloj, base, servidor };
@@ -57,6 +59,11 @@ function login(base, cuerpo, cookie) {
     headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
     body: JSON.stringify(cuerpo),
   });
+}
+
+// Token CSRF de la sesión: los POST con sesión lo exigen (P4).
+async function tokenCsrf(base, cookie) {
+  return (await (await fetch(`${base}/csrf`, { headers: { Cookie: cookie } })).json()).csrf;
 }
 
 function cookieDe(respuesta) {
@@ -101,12 +108,12 @@ test('login acepta application/x-www-form-urlencoded', async () => {
   assert.ok(cookieDe(respuesta));
 });
 
-test('login rechaza cuerpos mayores a 16 KiB con 413 y cuerpos inválidos con 400', async () => {
+test('login rechaza cuerpos mayores al límite compartido (64 KiB) con 413 y cuerpos inválidos con 400', async () => {
   const { base } = await levantar();
   const grande = await fetch(`${base}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nombre_usuario: 'a', contrasena: 'x'.repeat(20 * 1024) }),
+    body: JSON.stringify({ nombre_usuario: 'a', contrasena: 'x'.repeat(70 * 1024) }),
   });
   assert.strictEqual(grande.status, 413);
   const roto = await fetch(`${base}/login`, {
@@ -169,7 +176,10 @@ test('Scenario: logout elimina la sesión y el mismo identificador deja de funci
   const { base, db } = await levantar();
   const cookie = cookieDe(await login(base, ESTUDIANTE));
   assert.strictEqual((await fetch(`${base}/me`, { headers: { Cookie: cookie } })).status, 200);
-  const salida = await fetch(`${base}/logout`, { method: 'POST', headers: { Cookie: cookie } });
+  const salida = await fetch(`${base}/logout`, {
+    method: 'POST',
+    headers: { Cookie: cookie, 'X-CSRF-Token': await tokenCsrf(base, cookie) },
+  });
   assert.strictEqual(salida.status, 200);
   assert.match(salida.headers.getSetCookie().find((c) => c.startsWith('sid=')), /Max-Age=0/);
   assert.strictEqual(db.prepare('SELECT COUNT(*) AS n FROM sesiones').get().n, 0);
@@ -207,7 +217,10 @@ test('se audita login_exitoso, login_fallido y logout sin registrar contraseñas
   const { base, db } = await levantar();
   await login(base, { nombre_usuario: 'fantasma', contrasena: 'secreto-fantasma' });
   const cookie = cookieDe(await login(base, ESTUDIANTE));
-  await fetch(`${base}/logout`, { method: 'POST', headers: { Cookie: cookie } });
+  await fetch(`${base}/logout`, {
+    method: 'POST',
+    headers: { Cookie: cookie, 'X-CSRF-Token': await tokenCsrf(base, cookie) },
+  });
   const entradas = db.prepare('SELECT * FROM audit_log ORDER BY id').all();
   assert.deepStrictEqual(
     entradas.map((e) => [e.accion, e.actor]),

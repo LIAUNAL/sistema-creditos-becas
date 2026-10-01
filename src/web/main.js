@@ -6,6 +6,7 @@ const { ejecutarMigraciones } = require('../infra/migraciones');
 const { crearAuditoria } = require('../infra/auditoria');
 const { relojSistema } = require('../infra/reloj');
 const { crearAutenticacion } = require('./autenticacion');
+const { crearCsrf } = require('./csrf');
 
 async function main() {
   const puerto = Number.parseInt(process.env.PORT ?? '3000', 10);
@@ -16,12 +17,17 @@ async function main() {
   const db = abrirBaseDeDatos(); // usa DB_PATH
   ejecutarMigraciones(db);
   const auditoria = crearAuditoria({ db, reloj: relojSistema });
-  const autenticacion = crearAutenticacion({ db, reloj: relojSistema, auditoria });
+  const csrf = crearCsrf(); // usa CSRF_SECRET
+  if (csrf.usaSecretoAleatorio) {
+    console.warn('CSRF_SECRET no definido: secreto aleatorio por proceso (solo una instancia; los tokens caducan al reiniciar)');
+  }
+  const autenticacion = crearAutenticacion({ db, reloj: relojSistema, auditoria, csrf });
 
   const { puerto: escucha, cerrar } = await iniciarServidor({
     puerto,
     host: '0.0.0.0',
     rutas: [...autenticacion.rutas],
+    ...autenticacion.opcionesServidor,
   });
   console.log(`Servidor escuchando en el puerto ${escucha}`);
 
