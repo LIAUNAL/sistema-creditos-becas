@@ -19,7 +19,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 ## Tasks (stable IDs map 1:1 to plan slices)
 - [x] T0 (P0) Scope and docs: `bmad-correct-course` -> sprint change proposal, PRD + epics.md Epic 5, fill `docs/architecture-base.md`; bridge generated 18 changes `e5s1`..`e5s18` (capability `aplicacion-web`)
 - [x] T1 (P1) HTTP server + router, error mapping, `/health`, `npm start`, `engines`, server teardown rule
-- [ ] T2 (P2) DB: sqlite connection, migrations runner, clock, `audit_log`
+- [x] T2 (P2) DB: sqlite connection, migrations runner, clock, `audit_log`
 - [ ] T3 (P3) Identity: seeded users, async scrypt, sessions, login/logout, session rotation, login throttling
 - [ ] T4 (P4) Web security baseline: escaping, CSRF, cookie flags, body size limit, request timeout
 - [ ] T5 (P5) Visibility and ownership: assignments, default rule for Q5, policy functions, NFR-003 tests
@@ -57,5 +57,10 @@ Native review assessed per work-unit commit; the user's consent per candidate is
 - T1 (delegated writer, branch `feat/e5s1-servidor-http`): RED observed (`Cannot find module './errores'`), GREEN 112/112 via `npm test` (94 old + 18 new, no hang); `openspec validate e5s1 --strict` valid; parent verified a real server: `/health` 200, unknown path 404, exit 0 on SIGTERM. `npm start` and `engines >=22.5` added.
   - Decisions: error mapping table keyed by module `.codigo` (400/403/404/409; `CONFIGURACION_INVALIDA` and unknown -> 500 `ERROR_INTERNO`, never leaks message/stack); `ESTADO_INVALIDO` mapped to 409 with a note (persistence slice should throw `estadoHttp: 404` for not found); `.estadoHttp` override honoured; unregistered method on a known path -> 404 (not 405); teardown closes idle and all connections.
 
+- T1 commit f110bfd: assess medium, 417 lines, `review_due` = `slice_budget_reached`; consent v3 relayed, user chose "Skip this time" (`declined_this_candidate`, target sha256:78e07717...), decline run once and validated. Outcome: declined.
+- RDD: the user asked to stop review prompts ("desactiva las revisiones"); ran `gentle-ai review mode disable --scope clone --cwd .` -> `off (decided by clone_local)` (global stays on). From T2 on there is no `assess`/review step; functional checks and parent spot checks remain. Re-enable with `gentle-ai review mode enable --scope clone --cwd .`.
+- T2 (delegated writer, branch `feat/e5s2-base-de-datos`): RED observed (`Cannot find module './baseDeDatos'`), GREEN 127/127 via `npm test` (112 + 15 new); `openspec validate e5s2 --strict` valid. Parent verified: migrations apply `[1]` then `[]` (idempotent); DELETE and UPDATE on `audit_log` blocked by SQLite triggers (append-only). `node:sqlite` loads unflagged on v26.8.1 without warning; `engines` raised to `>=22.13` (unverified from docs, conservative); `data/` added to .gitignore.
+  - Decisions: migrations live in `src/infra/versiones/` (a `./migraciones` dir would clash with `migraciones.js`); each migration in its own BEGIN/COMMIT with ROLLBACK; `abrirBaseDeDatos({ruta, entorno})` path order ruta > DB_PATH > `data/app.db`, foreign_keys always, WAL only for files; `aplicada_en` uses the real clock, not the injected one.
+
 ## Next step
-T2 (P2, change `e5s2-...`) via delegated writer on a new branch stacked on `feat/e5s1-servidor-http`.
+T3 (P3, change `e5s3-...`) via delegated writer on a new branch stacked on `feat/e5s2-base-de-datos`.

@@ -4,7 +4,7 @@
   "private": true,
   "description": "Sistema de Créditos y Becas — implementación de stories del backlog en openspec/changes",
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.13"
   },
   "scripts": {
     "start": "node src/web/main.js",
