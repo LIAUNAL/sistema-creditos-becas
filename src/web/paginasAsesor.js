@@ -33,7 +33,7 @@ const ERRORES_DE_TERMINOS = Object.freeze({
  * academica (Story 5.9). Cada ruta pasa por `requerirRol`: sin sesion -> /login, otro rol -> 403.
  * Un recurso que no existe o no es visible para el asesor da el mismo 404 (regla P5).
  */
-function crearRutasAsesor({ servicioAsesor, servicioCondiciones, servicioDireccion, autenticacion, csrf }) {
+function crearRutasAsesor({ servicioAsesor, servicioCondiciones, servicioDesembolsos, servicioDireccion, autenticacion, csrf }) {
   const { requerirRol, obtenerUsuario, obtenerIdSesion } = autenticacion;
   const tokenDe = (req) => csrf.generar(obtenerIdSesion(req));
 
@@ -60,6 +60,13 @@ function crearRutasAsesor({ servicioAsesor, servicioCondiciones, servicioDirecci
   async function mostrarDetalle(contexto, estado = 200, extra = {}) {
     const detalle = await servicioAsesor.obtenerParaAsesor(contexto.usuario, contexto.params.id);
     if (!detalle) throw errorHttp(404, 'RECURSO_NO_ENCONTRADO');
+    // Story 5.14: el asesor asignado ve el calendario de una solicitud aprobada y puede ejecutar cuotas.
+    if (detalle.solicitud.estado === 'aprobada') {
+      detalle.desembolsos = await servicioDesembolsos.listarDesembolsosDeSolicitud(
+        contexto.usuario,
+        contexto.params.id,
+      );
+    }
     responderHtml(
       contexto.res,
       estado,
@@ -124,6 +131,24 @@ function crearRutasAsesor({ servicioAsesor, servicioCondiciones, servicioDirecci
     }
   });
 
+  // Story 5.14: ejecutar una cuota (PRG: 303 de vuelta al detalle de la solicitud). Una cuota que ya
+  // no esta programada (doble envio, vencida) da 409 mostrando el detalle con el mensaje; 403 y 404
+  // salen como pagina de error.
+  const ejecutarDesembolso = asesor(async (contexto) => {
+    try {
+      const ejecutado = await servicioDesembolsos.ejecutarDesembolso(contexto.usuario, contexto.params.id);
+      return redirigir(contexto.res, `/asesor/solicitudes/${encodeURIComponent(ejecutado.solicitudId)}`);
+    } catch (error) {
+      if (error.codigo !== 'DESEMBOLSO_NO_PROGRAMADO' || !error.solicitudId) throw error;
+      return mostrarDetalle({ ...contexto, params: { id: error.solicitudId } }, 409, {
+        resumenErrores: {
+          titulo: 'No se pudo ejecutar el desembolso',
+          elementos: [{ mensaje: 'El desembolso ya no está programado: ya fue ejecutado o venció.' }],
+        },
+      });
+    }
+  });
+
   const resumenDireccion = direccion(async (contexto) => {
     const resumenSolicitud = await servicioDireccion.obtenerResumen(contexto.usuario, contexto.params.id);
     if (!resumenSolicitud) throw errorHttp(404, 'RECURSO_NO_ENCONTRADO');
@@ -140,6 +165,7 @@ function crearRutasAsesor({ servicioAsesor, servicioCondiciones, servicioDirecci
     ['GET', '/asesor/solicitudes/:id', detalle],
     ['POST', '/asesor/solicitudes/:id/aprobar', aprobar],
     ['POST', '/asesor/solicitudes/:id/rechazar', rechazar],
+    ['POST', '/asesor/desembolsos/:id/ejecutar', ejecutarDesembolso],
     ['GET', '/direccion/solicitudes/:id', resumenDireccion],
   ];
 }

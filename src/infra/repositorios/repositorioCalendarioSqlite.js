@@ -110,6 +110,15 @@ function crearRepositorioCalendarioSqlite({ db }) {
       );
     },
 
+    // Story 5.14: un desembolso por id (misma instancia que el mapa de identidad de la unidad actual).
+    obtenerPorId(id) {
+      const unidad = unidadDeTrabajoActual();
+      const registrado = unidad.buscar('desembolso', id);
+      if (registrado) return registrado;
+      const fila = db.prepare('SELECT * FROM desembolsos WHERE id = ?').get(id);
+      return fila ? materializar(unidad, fila) : undefined;
+    },
+
     listarTodos() {
       return listar('', [], () => true);
     },

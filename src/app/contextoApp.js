@@ -11,6 +11,7 @@ const { crearRepositorioCondicionesSqlite } = require('../infra/repositorios/rep
 const { crearRepositorioCasosComiteSqlite } = require('../infra/repositorios/repositorioCasosComiteSqlite');
 const { crearRevisionComite } = require('../evaluacion-elegibilidad/revisionComite');
 const { CalendarioDesembolso } = require('../desembolso/calendarioDesembolso');
+const { crearEjecucionDesembolso } = require('../desembolso/ejecucionDesembolso');
 const { RegistroSolicitudCredito } = require('../solicitud-credito/registroSolicitudCredito');
 const { EnvioSolicitudCredito } = require('../solicitud-credito/envioSolicitud');
 const { DecisionAsesorFinanciero } = require('../solicitud-credito/decisionAsesor');
@@ -19,6 +20,7 @@ const { crearPoliticas } = require('../web/politicas');
 const { crearServicioSolicitudes } = require('./servicioSolicitudes');
 const { crearServicioAsesor, crearServicioDireccion } = require('./servicioAsesor');
 const { crearServicioCondiciones, MAXIMO_CUOTAS } = require('./servicioCondiciones');
+const { crearServicioDesembolsos } = require('./servicioDesembolsos');
 const { crearServicioBecas } = require('./servicioBecas');
 const { crearServicioComite } = require('./servicioComite');
 
@@ -50,6 +52,8 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     reloj: () => reloj.ahora(),
     repositorio: repositorios.decisiones,
   });
+  // Story 5.14: modulo real de ejecucion, con el colector (el aviso se guarda en el outbox del caso de uso).
+  const ejecucion = crearEjecucionDesembolso({ notificador: colector, reloj: () => reloj.ahora() });
   const revisionComite = crearRevisionComite({
     notificador: colector,
     reloj: () => reloj.ahora(),
@@ -65,6 +69,7 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     envio,
     repositorios,
     politicas,
+    ejecucion,
   });
   const piezas = {
     db,
@@ -75,6 +80,7 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     envio,
     decision,
     calendario,
+    ejecucion,
     repositorios,
     revisionComite,
     asignaciones,
@@ -82,6 +88,7 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
   };
   const servicioAsesor = crearServicioAsesor(piezas);
   const servicioCondiciones = crearServicioCondiciones(piezas);
+  const servicioDesembolsos = crearServicioDesembolsos(piezas);
   const servicioDireccion = crearServicioDireccion(piezas);
   const servicioBecas = crearServicioBecas(piezas);
   const servicioComite = crearServicioComite(piezas);
@@ -92,12 +99,14 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     envio,
     decision,
     calendario,
+    ejecucion,
     revisionComite,
     asignaciones,
     politicas,
     servicioSolicitudes,
     servicioAsesor,
     servicioCondiciones,
+    servicioDesembolsos,
     servicioDireccion,
     servicioBecas,
     servicioComite,

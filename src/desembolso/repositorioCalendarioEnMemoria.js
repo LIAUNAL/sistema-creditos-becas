@@ -6,7 +6,8 @@
  *
  *   guardar(solicitudId, desembolsos)  registra (o reemplaza) las cuotas de una solicitud
  *   obtenerPorSolicitud(solicitudId)   cuotas por numero de cuota; `[]` si no hay calendario
- *   listarTodos()                      todas las cuotas
+ *   obtenerPorId(id)                   la cuota con ese id, o `undefined`
+ *   listarTodos()                    todas las cuotas
  *   listarPorEstado(estado)            las cuotas en ese estado
  *   registrarError(error)              anexa un error de generacion `{ solicitudId, codigo, mensaje, registradoEn }`
  *   listarErrores()                    los errores registrados, en orden
@@ -24,6 +25,7 @@ function crearRepositorioCalendarioEnMemoria() {
       desembolsos.set(solicitudId, [...cuotas].sort(porNumeroDeCuota));
     },
     obtenerPorSolicitud: (solicitudId) => desembolsos.get(solicitudId) ?? [],
+    obtenerPorId: (id) => [...desembolsos.values()].flat().find((d) => d.id === id),
     listarTodos: () => [...desembolsos.values()].flat(),
     listarPorEstado(estado) {
       return [...desembolsos.values()].flat().filter((d) => d.estado === estado);
