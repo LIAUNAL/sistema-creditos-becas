@@ -33,6 +33,14 @@ const TITULOS_ERROR = Object.freeze({
   409: ['Conflicto', 'La operación no es posible en el estado actual de la solicitud.'],
 });
 
+const ETIQUETAS_DESEMBOLSO = Object.freeze({
+  programado: 'Programado',
+  ejecutado: 'Ejecutado',
+  vencido: 'Vencido',
+});
+
+const etiquetaDesembolso = (estado) => ETIQUETAS_DESEMBOLSO[estado] ?? estado;
+
 const etiquetaEstado = (estado) => ETIQUETAS_ESTADO[estado] ?? estado;
 const etiquetaDocumento = (tipo) => ETIQUETAS_DOCUMENTO[tipo] ?? tipo;
 
@@ -88,14 +96,14 @@ ${elementos.map(({ campo, mensaje }) =>
 </div>`;
 }
 
-function campoDeTexto({ id, etiqueta, valores, errores, ayuda, modo }) {
+function campoDeTexto({ id, etiqueta, valores, errores, ayuda, modo, tipo = 'text' }) {
   const error = errores[id];
   const descripcion = [ayuda ? `${id}-ayuda` : null, error ? `${id}-error` : null].filter(Boolean).join(' ');
   return html`<div class="campo">
 <label for="${id}">${etiqueta}</label>
 ${ayuda ? html`<p id="${id}-ayuda" class="ayuda">${ayuda}</p>` : ''}
 ${error ? html`<p id="${id}-error" class="error-campo"><span class="solo-lectores">Error: </span>${error}</p>` : ''}
-<input id="${id}" name="${id}" type="text" value="${valores[id] ?? ''}"${modo ? html` inputmode="${modo}"` : ''} required${error ? html` aria-invalid="true"` : ''}${descripcion ? html` aria-describedby="${descripcion}"` : ''}>
+<input id="${id}" name="${id}" type="${tipo}" value="${valores[id] ?? ''}"${modo ? html` inputmode="${modo}"` : ''} required${error ? html` aria-invalid="true"` : ''}${descripcion ? html` aria-describedby="${descripcion}"` : ''}>
 </div>`;
 }
 
@@ -226,6 +234,35 @@ ${campoCsrf(csrf)}
 </section>`;
 }
 
+const dosDecimales = (monto) => Number(monto).toFixed(2);
+
+// Story 5.10: calendario de desembolsos de una solicitud aprobada, solo lectura para el estudiante.
+function seccionCalendario(calendario) {
+  if (calendario.length === 0) {
+    return html`<section aria-labelledby="calendario"><h2 id="calendario">Calendario de desembolsos</h2>
+<p>Aún no hay desembolsos programados.</p></section>`;
+  }
+  const totalCentavos = calendario.reduce((suma, cuota) => suma + Math.round(cuota.monto * 100), 0);
+  return html`<section aria-labelledby="calendario">
+<h2 id="calendario">Calendario de desembolsos</h2>
+<p>Su crédito fue aprobado por <strong>${dosDecimales(totalCentavos / 100)}</strong> en ${calendario.length} cuotas.</p>
+<table>
+<caption>Cuotas de desembolso programadas</caption>
+<thead>
+<tr><th scope="col">Cuota</th><th scope="col">Fecha</th><th scope="col">Monto</th><th scope="col">Estado</th></tr>
+</thead>
+<tbody>
+${calendario.map((cuota) => html`<tr>
+<td>${cuota.numeroCuota}</td>
+<td><time datetime="${cuota.fecha}">${cuota.fecha}</time></td>
+<td>${dosDecimales(cuota.monto)}</td>
+<td>${etiquetaDesembolso(cuota.estado)} (<code>${cuota.estado}</code>)</td>
+</tr>`)}
+</tbody>
+</table>
+</section>`;
+}
+
 // `resumenErrores`: `{ titulo, elementos }` opcional para mostrar mensajes sobre la solicitud.
 function vistaDetalle({
   usuario,
@@ -235,7 +272,7 @@ function vistaDetalle({
   valoresDocumento = {},
   erroresDocumento = {},
 }) {
-  const { solicitud, documentos, faltantes } = detalle;
+  const { solicitud, documentos, faltantes, calendario } = detalle;
   return pagina({
     titulo: `Solicitud ${solicitud.periodoAcademico}`,
     usuario,
@@ -251,6 +288,7 @@ ${resumenErrores ? resumen(resumenErrores.titulo, resumenErrores.elementos) : ''
 <dt>Ocupación del acudiente</dt><dd>${solicitud.ocupacionAcudiente}</dd>
 <dt>Creada</dt><dd><time datetime="${solicitud.creadaEn}">${String(solicitud.creadaEn).slice(0, 10)}</time></dd>
 </dl>
+${calendario ? seccionCalendario(calendario) : ''}
 ${seccionDocumentos({ solicitud, documentos, faltantes, csrf, valoresDocumento, erroresDocumento })}
 <p><a href="/solicitudes">Volver a mis solicitudes</a></p>`,
   });
@@ -320,9 +358,38 @@ ${errorMotivo ? html`<p id="motivo-error" class="error-campo"><span class="solo-
 </section>`;
 }
 
-// `detalle`: { solicitud, documentos, decision }. El formulario de rechazo solo se ofrece mientras
-// la solicitud sigue pendiente de revision.
-function vistaDetalleAsesor({ usuario, csrf, detalle, resumenErrores = null, valorMotivo, errorMotivo }) {
+const CAMPOS_APROBACION = Object.freeze([
+  { id: 'monto', etiqueta: 'Monto aprobado', ayuda: 'Solo números, con hasta dos decimales y sin separadores de miles.', modo: 'decimal' },
+  { id: 'numeroCuotas', etiqueta: 'Número de cuotas', ayuda: 'Un entero mayor que cero.', modo: 'numeric' },
+  { id: 'fechaPrimeraCuota', etiqueta: 'Fecha de la primera cuota', ayuda: 'Las demás cuotas caen cada mes.', tipo: 'date' },
+]);
+
+// Story 5.10: aprobar con las condiciones del credito. Los campos con error se anuncian en el
+// resumen (`resumenErrores`) y junto al campo.
+function seccionAprobacion({ solicitud, csrf, valoresAprobacion = {}, erroresAprobacion = {} }) {
+  return html`<section aria-labelledby="aprobar">
+<h2 id="aprobar">Aprobar la solicitud</h2>
+<p>Al aprobar se generan los desembolsos programados y el estudiante será notificado de la decisión.</p>
+<form method="post" action="/asesor/solicitudes/${solicitud.id}/aprobar">
+${campoCsrf(csrf)}
+${CAMPOS_APROBACION.map((c) => campoDeTexto({ ...c, valores: valoresAprobacion, errores: erroresAprobacion }))}
+<button type="submit">Aprobar solicitud</button>
+</form>
+</section>`;
+}
+
+// `detalle`: { solicitud, documentos, decision }. Los formularios de aprobacion y rechazo solo se
+// ofrecen mientras la solicitud sigue pendiente de revision.
+function vistaDetalleAsesor({
+  usuario,
+  csrf,
+  detalle,
+  resumenErrores = null,
+  valorMotivo,
+  errorMotivo,
+  valoresAprobacion,
+  erroresAprobacion,
+}) {
   const { solicitud, documentos, decision } = detalle;
   return pagina({
     titulo: `Revisión ${solicitud.periodoAcademico}`,
@@ -357,7 +424,8 @@ ${decision.motivo ? html`<dt>Motivo</dt><dd>${decision.motivo}</dd>` : ''}
 </dl>
 </section>`
     : solicitud.estado === 'pendiente_revision'
-      ? seccionRechazo({ solicitud, csrf, valorMotivo, errorMotivo })
+      ? html`${seccionAprobacion({ solicitud, csrf, valoresAprobacion, erroresAprobacion })}
+${seccionRechazo({ solicitud, csrf, valorMotivo, errorMotivo })}`
       : ''}
 <p><a href="/asesor/cola">Volver a la cola de revisión</a></p>`,
   });

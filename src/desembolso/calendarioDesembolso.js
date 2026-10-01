@@ -1,6 +1,7 @@
 'use strict';
 
 const { randomUUID } = require('node:crypto');
+const { crearRepositorioCalendarioEnMemoria } = require('./repositorioCalendarioEnMemoria');
 
 /**
  * Story 3.1 (Epic 3: Desembolso y seguimiento)
@@ -69,15 +70,27 @@ function repartirMonto(monto, numeroCuotas) {
 }
 
 class CalendarioDesembolso {
-  constructor() {
-    /** @type {Map<string, object[]>} solicitudId -> desembolsos */
-    this._desembolsos = new Map();
-    /** @type {object[]} errores de generación registrados */
-    this.errores = [];
+  /**
+   * Todas las opciones son aditivas: sin ellas el calendario vive en memoria, como siempre.
+   *
+   * @param {object} [dependencias]
+   * @param {object} [dependencias.repositorio] puerto de persistencia (ver repositorioCalendarioEnMemoria.js)
+   * @param {function(): Date} [dependencias.reloj] hora de los errores registrados
+   * @param {number} [dependencias.maximoCuotas] tope del número de cuotas (sin tope por defecto)
+   */
+  constructor({ repositorio, reloj = () => new Date(), maximoCuotas = Infinity } = {}) {
+    this._repositorio = repositorio ?? crearRepositorioCalendarioEnMemoria();
+    this._reloj = reloj;
+    this._maximoCuotas = maximoCuotas;
+  }
+
+  /** Errores de generación registrados (los del repositorio). */
+  get errores() {
+    return this._repositorio.listarErrores();
   }
 
   obtenerPorSolicitud(solicitudId) {
-    return this._desembolsos.get(solicitudId) ?? [];
+    return this._repositorio.obtenerPorSolicitud(solicitudId);
   }
 
   /**
@@ -94,8 +107,8 @@ class CalendarioDesembolso {
    * @throws {ErrorGeneracionCalendario} registrado en `errores`; no crea desembolsos
    */
   generar(solicitud = {}, opciones = {}) {
-    const existentes = this._desembolsos.get(solicitud.id);
-    if (existentes) return existentes;
+    const existentes = this._repositorio.obtenerPorSolicitud(solicitud.id);
+    if (existentes.length > 0) return existentes;
 
     const base = this._validar(solicitud, opciones);
 
@@ -109,7 +122,7 @@ class CalendarioDesembolso {
       estado: ESTADO_DESEMBOLSO_PROGRAMADO,
     }));
 
-    this._desembolsos.set(solicitud.id, desembolsos);
+    this._repositorio.guardar(solicitud.id, desembolsos);
     return desembolsos;
   }
 
@@ -124,6 +137,9 @@ class CalendarioDesembolso {
     if (!Number.isInteger(solicitud.numeroCuotas) || solicitud.numeroCuotas <= 0) {
       this._rechazar('CUOTAS_INVALIDAS', 'el número de cuotas debe ser un entero mayor que cero', solicitud);
     }
+    if (solicitud.numeroCuotas > this._maximoCuotas) {
+      this._rechazar('CUOTAS_INVALIDAS', `el número de cuotas no puede superar ${this._maximoCuotas}`, solicitud);
+    }
     const base = parsearFecha(opciones.fechaPrimeraCuota);
     if (!base) {
       this._rechazar('FECHA_INVALIDA', 'fechaPrimeraCuota debe ser una fecha ISO YYYY-MM-DD válida', solicitud);
@@ -133,11 +149,11 @@ class CalendarioDesembolso {
 
   _rechazar(codigo, motivo, solicitud) {
     const error = new ErrorGeneracionCalendario(codigo, motivo, solicitud.id);
-    this.errores.push({
+    this._repositorio.registrarError({
       solicitudId: solicitud.id,
       codigo,
       mensaje: error.message,
-      registradoEn: new Date().toISOString(),
+      registradoEn: this._reloj().toISOString(),
     });
     throw error;
   }

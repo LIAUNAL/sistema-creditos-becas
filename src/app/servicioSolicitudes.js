@@ -163,11 +163,18 @@ function crearServicioSolicitudes({ db, reloj, colector, registro, envio, reposi
         if (!solicitud || !politicas.puedeVerSolicitud(usuario, solicitud)) return undefined;
         const documentos = envio.documentosDe(solicitudId).map((d) => ({ ...d }));
         const cargados = new Set(documentos.map((d) => d.tipo));
-        return {
+        const detalle = {
           solicitud: copiar(usuario, solicitud),
           documentos,
           faltantes: DOCUMENTOS_REQUERIDOS_POR_DEFECTO.filter((tipo) => !cargados.has(tipo)),
         };
+        // Story 5.10: el estudiante conoce cuando y cuanto se le desembolsa (solo lectura).
+        if (solicitud.estado === 'aprobada') {
+          detalle.calendario = repositorios.calendario
+            .obtenerPorSolicitud(solicitudId)
+            .map(({ numeroCuota, fecha, monto, estado }) => ({ numeroCuota, fecha, monto, estado }));
+        }
+        return detalle;
       });
     },
   };

@@ -27,7 +27,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 - [x] T7 (P7) Persistence for solicitud-credito modules, write-back per D2 (size:exception candidate)
 - [x] T8 (P8) Student credit flow (1.1, 1.2)
 - [x] T9 (P9) Advisor flow (1.3)
-- [ ] T10 (P10) Loan terms + calendar generation (3.1) (size:exception candidate)
+- [x] T10 (P10) Loan terms + calendar generation (3.1) (size:exception candidate)
 - [ ] T11 (P11) Scholarship part 1 (2.1): applications, eligibility run, `scholarship_awards`
 - [ ] T12 (P12) Scholarship part 2 (2.2): committee queue, member id in audit_log
 - [ ] T13 (P13) Scholarship UI + student status page (2.3)
@@ -104,5 +104,12 @@ Native review assessed per work-unit commit; the user's consent per candidate is
   - Known UX gap: direction (and committee) login still lands on `/solicitudes`, which is a 403 page for them; fix when their screens exist (P12/P13/P17).
   - Size ~740 lines (source + tests) -> `size:exception` candidate.
 
+- T9 commit 1189ddb.
+- T10 (delegated writer, branch `feat/e5s10-condiciones-calendario`): RED observed (`Cannot find module './servicioCondiciones'`, `no such table: desembolsos`), GREEN 371/371 on two consecutive full runs (325 + 46 new; first GREEN pass had 4 failures from the writer's own test helper counting the existing `envio` outbox row, fixed in the helper); `openspec validate e5s10 --strict` valid. Parent independent real run (curl, 3 roles, temp DB): approval form present on the assigned advisor's page; invalid terms (monto 0, monto `abc`, cuotas 0, bad date) -> 400 each and the request stays `pendiente_revision`; valid terms (1200000.01, 3 cuotas, first date 2026-12-31) -> 303; approving again -> 409; student detail shows installments 400000.00 / 400000.00 / 400000.01 (sum in cents 120000001), dates 2026-12-31 / 2027-01-31 / 2027-02-28 (month-end clamp); SQLite: 3 `desembolsos` (estado `programado`, `periodo_academico` 2026-1, `tipo_credito` credito), 1 `condiciones_credito`, 4 `calendar_errors` (MONTO_INVALIDO x2, CUOTAS_INVALIDAS, FECHA_INVALIDA), 1 audit `aprobar`, 1 `decision` outbox row; SIGTERM exit 0.
+  - Design decisions: ORDER = validate terms BEFORE approving; approval + terms + calendar + audit + outbox are ONE all-or-nothing transaction (`generar` runs first on a candidate copy, then `decision.aprobar`); new additive `ejecutarCasoDeUso` option `confirmarSiError` (default true = old behavior; false = full rollback on error, no flush, no outbox); migration 006 (`condiciones_credito`, `desembolsos` UNIQUE(solicitud_id, numero_cuota), `calendar_errors`); `CalendarioDesembolso` takes optional `repositorio`, `reloj`, `maximoCuotas` (default in-memory identical); calendar repository contract tests run on in-memory and SQLite; unit-of-work support for desembolsos (later `ejecutar`/`revisar` persist through the same flush); `tipoCredito` is the constant 'credito' (documented) until the request captures it; monto `^\d{1,12}(\.\d{1,2})?$`, cuotas max 120.
+  - Deviation (accepted): the `calendar_errors` row is written by `registrarError` in its own small transaction WHILE the operation runs (not strictly after the rollback); it still survives the rollback because operations run outside the flush transaction.
+  - Check order on approve: role -> 404 (missing/draft) -> 403 (not assigned) -> 409 (not pendiente_revision) -> terms validation. One existing assertion changed in `flujoAsesor.test.js` (it asserted there was NO approve form "until the next slice"; now asserts the form exists).
+  - Size ~1,550 lines (mostly tests and the contract suite) -> `size:exception` (plan forecast ~420).
+
 ## Next step
-T10 (P10, change `e5s10-...`, size:exception candidate) loan terms + approval + calendar generation (3.1) via delegated writer on a new branch stacked on `feat/e5s9-flujo-asesor`.
+T11 (P11, change `e5s11-...`) scholarship backend part 1 (2.1): applications, eligibility run, `scholarship_awards` for automatic `elegible`, via delegated writer on a new branch stacked on `feat/e5s10-condiciones-calendario`.
