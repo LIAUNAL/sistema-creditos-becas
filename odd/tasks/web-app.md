@@ -21,7 +21,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 - [x] T1 (P1) HTTP server + router, error mapping, `/health`, `npm start`, `engines`, server teardown rule
 - [x] T2 (P2) DB: sqlite connection, migrations runner, clock, `audit_log`
 - [x] T3 (P3) Identity: seeded users, async scrypt, sessions, login/logout, session rotation, login throttling
-- [ ] T4 (P4) Web security baseline: escaping, CSRF, cookie flags, body size limit, request timeout
+- [x] T4 (P4) Web security baseline: escaping, CSRF, cookie flags, body size limit, request timeout
 - [ ] T5 (P5) Visibility and ownership: assignments, default rule for Q5, policy functions, NFR-003 tests
 - [ ] T6 (P6) Collecting notifier + outbox + transaction helper (C2 design), two atomicity tests
 - [ ] T7 (P7) Persistence for solicitud-credito modules, write-back per D2 (size:exception candidate)
@@ -67,5 +67,12 @@ Native review assessed per work-unit commit; the user's consent per candidate is
   - Decisions: migration 002 (`usuarios` with CHECK on the 4 roles, `sesiones.id` = SHA-256 of the token); async scrypt + `timingSafeEqual`; seed has no default passwords (`SEED_PASSWORD_*` or random printed once); guards `requerirSesion` / `requerirRol(...)` wrap router handlers; errors carry `.codigo` + `.estadoHttp` so P1 `mapearError` maps 401/403/429/413/400; throttling per `usuario|IP`, in-memory, sliding window, checked BEFORE verifying the password; unknown user verified against a cached dummy hash; audit `login_exitoso` / `login_fallido` / `logout`.
   - Hand-off to P4 (security baseline): replace the 16 KiB body reader local to `autenticacion.js` with the shared one; cap/sanitise the attacker-controlled username stored by `login_fallido`; harden cookie flags (Secure when applicable); CSRF; escaping; request timeout.
 
+- T3 commit 206deb8.
+- T4 (delegated writer, branch `feat/e5s4-seguridad-web`): RED observed (`Cannot find module './csrf'` / `'./html'`), GREEN 170/170 via `npm test` (148 + 22 new; first GREEN run had 1 failure `403 !== 404` because CSRF ran before route resolution, fixed by checking CSRF after resolving the route); `openspec validate e5s4 --strict` valid. Parent real run: security headers 4/4 on `/health`; 200 KB body -> 413; malformed JSON -> 400; cross-site `Sec-Fetch-Site` login -> 403; logout without token -> 403, with wrong token -> 403, with the right token -> 200, `/me` afterwards -> 401; SIGTERM exit 0.
+  - Decisions: escaping helper `html` (escapes by default, explicit marker for trusted raw); CSRF = HMAC-SHA256 of the session id with `CSRF_SECRET` (>=16 chars, else a random per-process secret, single-instance, warned in the log), token in header `x-csrf-token` or form field `_csrf`, exposed in the login response body and `GET /csrf`; `/login` exempt from CSRF but protected by an Origin/Sec-Fetch-Site same-origin check (no headers = accepted, non-browser clients); shared body reader (64 KiB, cached per request, `Connection: close` on 413); timeouts injectable (headers 15 s, request 30 s, keep-alive 5 s, socket 60 s, handler 20 s -> 408/503); cookie helper (HttpOnly, SameSite=Lax, Secure with HTTPS, `X-Forwarded-Proto` only if `TRUST_PROXY=1`, or `COOKIE_SECURE=1`); `login_fallido` username sanitised and capped at 64 chars.
+  - Behavior change from P3: `POST /logout` without a session is now 403 (was 200) because all state-changing requests need session + CSRF.
+  - Process deviation: the writer edited some files with Python scripts instead of Edit/Write; results verified by the parent (tests, validation, live run).
+  - Hand-off to P18 (README): document `CSRF_SECRET`, `TRUST_PROXY`, `COOKIE_SECURE`, `DB_PATH`, `PORT`, `SEED_PASSWORD_*`.
+
 ## Next step
-T4 (P4, change `e5s4-...`) via delegated writer on a new branch stacked on `feat/e5s3-identidad`.
+T5 (P5, change `e5s5-...`) via delegated writer on a new branch stacked on `feat/e5s4-seguridad-web`.

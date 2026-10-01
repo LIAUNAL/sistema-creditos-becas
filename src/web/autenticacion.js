@@ -4,9 +4,11 @@ const crypto = require('node:crypto');
 const { verificarContrasena, hashearContrasena } = require('../infra/contrasenas');
 const { responderJson } = require('./respuestas');
 const { crearGuardias, errorHttp } = require('./guardias');
+const { crearCsrf } = require('./csrf');
+const { crearPoliticaCookies } = require('./cookies');
 
 const NOMBRE_COOKIE = 'sid';
-const LIMITE_CUERPO_LOGIN = 16 * 1024; // 16 KiB; P4 lo reemplaza por el limite compartido.
+const LONGITUD_MAXIMA_ACTOR = 64;
 const OCHO_HORAS_MS = 8 * 60 * 60 * 1000;
 const QUINCE_MINUTOS_MS = 15 * 60 * 1000;
 
@@ -20,42 +22,11 @@ function leerCookie(req, nombre) {
   return null;
 }
 
-// Lector de cuerpo acotado local a /login (JSON o x-www-form-urlencoded).
-function leerCuerpoLogin(req) {
-  return new Promise((resolver, rechazar) => {
-    const trozos = [];
-    let total = 0;
-    req.on('data', (trozo) => {
-      total += trozo.length;
-      if (total > LIMITE_CUERPO_LOGIN) {
-        trozos.length = 0;
-        req.removeAllListeners('data');
-        req.resume();
-        rechazar(errorHttp(413, 'CUERPO_DEMASIADO_GRANDE'));
-        return;
-      }
-      trozos.push(trozo);
-    });
-    req.on('end', () => {
-      if (total > LIMITE_CUERPO_LOGIN) return;
-      const texto = Buffer.concat(trozos).toString('utf8');
-      const tipo = (req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase();
-      try {
-        if (tipo === 'application/json') resolver(JSON.parse(texto));
-        else if (tipo === 'application/x-www-form-urlencoded') {
-          resolver(Object.fromEntries(new URLSearchParams(texto)));
-        } else rechazar(errorHttp(400, 'FORMATO_INVALIDO'));
-      } catch {
-        rechazar(errorHttp(400, 'FORMATO_INVALIDO'));
-      }
-    });
-    req.on('error', rechazar);
-  });
-}
-
-function cookieDeSesion(valor, maxAgeSegundos) {
-  // P4 endurece el resto de atributos (Secure, etc.).
-  return `${NOMBRE_COOKIE}=${valor}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSegundos}`;
+// El nombre de usuario de un login fallido lo controla el atacante: sin caracteres
+// de control y acotado antes de guardarlo en la bitacora o usarlo como clave.
+function sanearActor(nombre) {
+  const limpio = nombre.replace(/[\u0000-\u001f\u007f-\u009f]/g, '').slice(0, LONGITUD_MAXIMA_ACTOR);
+  return limpio === '' ? 'anonimo' : limpio;
 }
 
 /**
@@ -71,6 +42,8 @@ function crearAutenticacion({
   duracionSesionMs = OCHO_HORAS_MS,
   maxIntentos = 5,
   ventanaMs = QUINCE_MINUTOS_MS,
+  csrf = crearCsrf(),
+  cookies = crearPoliticaCookies(),
 }) {
   const buscarUsuario = db.prepare('SELECT * FROM usuarios WHERE nombre_usuario = ?');
   const insertarSesion = db.prepare(
@@ -127,14 +100,20 @@ function crearAutenticacion({
     return token;
   }
 
-  async function login({ req, res }) {
-    const cuerpo = await leerCuerpoLogin(req);
+  const obtenerIdSesion = (req) => sesionDeSolicitud(req)?.id ?? null;
+
+  const cookieDeSesion = (req, valor, maxAgeSegundos) =>
+    cookies.serializar(req, NOMBRE_COOKIE, valor, maxAgeSegundos);
+
+  async function login({ req, res, leerCuerpo }) {
+    const cuerpo = await leerCuerpo();
     const { nombre_usuario: nombre, contrasena } = cuerpo ?? {};
     if (typeof nombre !== 'string' || typeof contrasena !== 'string' || nombre === '') {
       throw errorHttp(400, 'FORMATO_INVALIDO');
     }
     const ip = req.socket.remoteAddress ?? 'desconocida';
-    const clave = `${nombre}|${ip}`;
+    const actor = sanearActor(nombre);
+    const clave = `${actor}|${ip}`;
     if (fallosVigentes(clave).length >= maxIntentos) {
       throw errorHttp(429, 'DEMASIADOS_INTENTOS');
     }
@@ -147,7 +126,7 @@ function crearAutenticacion({
     if (!usuario || !valida || usuario.activo !== 1) {
       fallos.set(clave, [...fallosVigentes(clave), reloj.ahora().getTime()]);
       auditoria.registrar({
-        actor: nombre === '' ? 'anonimo' : nombre,
+        actor,
         rol: 'anonimo',
         accion: 'login_fallido',
         objetivo: 'login',
@@ -168,8 +147,13 @@ function crearAutenticacion({
       objetivo: `usuario:${usuario.id}`,
       detalle: { ip },
     });
-    res.setHeader('Set-Cookie', cookieDeSesion(token, Math.floor(duracionSesionMs / 1000)));
-    responderJson(res, 200, { id: usuario.id, nombre_usuario: usuario.nombre_usuario, rol: usuario.rol });
+    res.setHeader('Set-Cookie', cookieDeSesion(req, token, Math.floor(duracionSesionMs / 1000)));
+    responderJson(res, 200, {
+      id: usuario.id,
+      nombre_usuario: usuario.nombre_usuario,
+      rol: usuario.rol,
+      csrf: csrf.generar(sha256(token)),
+    });
   }
 
   function logout({ req, res }) {
@@ -183,7 +167,7 @@ function crearAutenticacion({
         objetivo: `usuario:${sesion.usuario.id}`,
       });
     }
-    res.setHeader('Set-Cookie', cookieDeSesion('', 0));
+    res.setHeader('Set-Cookie', cookieDeSesion(req, '', 0));
     responderJson(res, 200, {});
   }
 
@@ -193,9 +177,22 @@ function crearAutenticacion({
     ['POST', '/login', login],
     ['POST', '/logout', logout],
     ['GET', '/me', guardias.requerirSesion(({ usuario }) => usuario)],
+    // Token CSRF de la sesion actual, para que las paginas lo incrusten en sus formularios.
+    [
+      'GET',
+      '/csrf',
+      ({ req }) => {
+        const idSesion = obtenerIdSesion(req);
+        if (!idSesion) throw errorHttp(401, 'NO_AUTENTICADO');
+        return { csrf: csrf.generar(idSesion) };
+      },
+    ],
   ];
 
-  return { rutas, obtenerUsuario, ...guardias };
+  // Opciones para iniciarServidor: comparten el mismo secreto CSRF y la misma sesion.
+  const opcionesServidor = { csrf, obtenerIdSesion };
+
+  return { rutas, obtenerUsuario, obtenerIdSesion, opcionesServidor, ...guardias };
 }
 
 module.exports = { crearAutenticacion };
