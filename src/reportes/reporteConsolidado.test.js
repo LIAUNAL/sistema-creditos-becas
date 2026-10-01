@@ -22,10 +22,10 @@ test('Escenario: Dirección académica consulta el reporte de ese periodo - tota
       { id: 'bec-4', periodoAcademico: '2025-2', estado: 'otorgada' },
     ],
     desembolsos: [
-      { solicitudId: 'sol-1', monto: 250000.5, estado: 'desembolsado' },
-      { solicitudId: 'sol-2', monto: 100000.25, estado: 'desembolsado' },
+      { solicitudId: 'sol-1', monto: 250000.5, estado: 'ejecutado' },
+      { solicitudId: 'sol-2', monto: 100000.25, estado: 'ejecutado' },
       { solicitudId: 'sol-2', monto: 100000, estado: 'programado' },
-      { solicitudId: 'sol-4', monto: 999999, estado: 'desembolsado' },
+      { solicitudId: 'sol-4', monto: 999999, estado: 'ejecutado' },
     ],
   };
 
@@ -43,7 +43,7 @@ test('Escenario: Dirección académica consulta el reporte de ese periodo (2) - 
   const datos = {
     solicitudes: [{ id: 'sol-9', periodoAcademico: '2025-2', estado: 'aprobada' }],
     becas: [{ id: 'bec-9', periodoAcademico: '2025-2', estado: 'otorgada' }],
-    desembolsos: [{ solicitudId: 'sol-9', monto: 500, estado: 'desembolsado' }],
+    desembolsos: [{ solicitudId: 'sol-9', monto: 500, estado: 'ejecutado' }],
   };
 
   const reporte = generarReporteConsolidado(PERIODO, datos);
@@ -69,8 +69,8 @@ test('La suma del monto desembolsado es exacta en centavos', () => {
   const datos = {
     solicitudes: [{ id: 'sol-1', periodoAcademico: PERIODO, estado: 'aprobada' }],
     desembolsos: [
-      { solicitudId: 'sol-1', monto: 0.1, estado: 'desembolsado' },
-      { solicitudId: 'sol-1', monto: 0.2, estado: 'desembolsado' },
+      { solicitudId: 'sol-1', monto: 0.1, estado: 'ejecutado' },
+      { solicitudId: 'sol-1', monto: 0.2, estado: 'ejecutado' },
     ],
   };
 
