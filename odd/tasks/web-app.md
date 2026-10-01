@@ -18,7 +18,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 
 ## Tasks (stable IDs map 1:1 to plan slices)
 - [x] T0 (P0) Scope and docs: `bmad-correct-course` -> sprint change proposal, PRD + epics.md Epic 5, fill `docs/architecture-base.md`; bridge generated 18 changes `e5s1`..`e5s18` (capability `aplicacion-web`)
-- [ ] T1 (P1) HTTP server + router, error mapping, `/health`, `npm start`, `engines`, server teardown rule
+- [x] T1 (P1) HTTP server + router, error mapping, `/health`, `npm start`, `engines`, server teardown rule
 - [ ] T2 (P2) DB: sqlite connection, migrations runner, clock, `audit_log`
 - [ ] T3 (P3) Identity: seeded users, async scrypt, sessions, login/logout, session rotation, login throttling
 - [ ] T4 (P4) Web security baseline: escaping, CSRF, cookie flags, body size limit, request timeout
@@ -53,5 +53,9 @@ Native review assessed per work-unit commit; the user's consent per candidate is
 - Commits on `docs/web-app-plan`: proposal, PRD+epics, architecture-base, bridge output (see git log).
 - Assumed defaults (user did not answer): Q1 Node built-ins + node:sqlite + server-rendered HTML; Q2 advisor executes disbursements; Q3 metadata-only documents; Q4 student starts the scholarship application and enters `promedioAcumulado`; Q5 default assignment rule from the plan.
 
+- T0 review: `assess` medium, 3,544 changed lines (docs + generated changes), `review_due` = `slice_budget_reached`; consent v3 relayed to the user, who chose "Skip this time" (`declined_this_candidate`, target sha256:beb81d77...); decline invocation run once and validated. Outcome: declined.
+- T1 (delegated writer, branch `feat/e5s1-servidor-http`): RED observed (`Cannot find module './errores'`), GREEN 112/112 via `npm test` (94 old + 18 new, no hang); `openspec validate e5s1 --strict` valid; parent verified a real server: `/health` 200, unknown path 404, exit 0 on SIGTERM. `npm start` and `engines >=22.5` added.
+  - Decisions: error mapping table keyed by module `.codigo` (400/403/404/409; `CONFIGURACION_INVALIDA` and unknown -> 500 `ERROR_INTERNO`, never leaks message/stack); `ESTADO_INVALIDO` mapped to 409 with a note (persistence slice should throw `estadoHttp: 404` for not found); `.estadoHttp` override honoured; unregistered method on a known path -> 404 (not 405); teardown closes idle and all connections.
+
 ## Next step
-T1 (P1, change `e5s1-fundacion-del-servidor-http`) via delegated writer on a new branch stacked on `docs/web-app-plan`.
+T2 (P2, change `e5s2-...`) via delegated writer on a new branch stacked on `feat/e5s1-servidor-http`.
