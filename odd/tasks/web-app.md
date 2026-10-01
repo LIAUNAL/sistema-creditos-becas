@@ -22,7 +22,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 - [x] T2 (P2) DB: sqlite connection, migrations runner, clock, `audit_log`
 - [x] T3 (P3) Identity: seeded users, async scrypt, sessions, login/logout, session rotation, login throttling
 - [x] T4 (P4) Web security baseline: escaping, CSRF, cookie flags, body size limit, request timeout
-- [ ] T5 (P5) Visibility and ownership: assignments, default rule for Q5, policy functions, NFR-003 tests
+- [x] T5 (P5) Visibility and ownership: assignments, default rule for Q5, policy functions, NFR-003 tests
 - [ ] T6 (P6) Collecting notifier + outbox + transaction helper (C2 design), two atomicity tests
 - [ ] T7 (P7) Persistence for solicitud-credito modules, write-back per D2 (size:exception candidate)
 - [ ] T8 (P8) Student credit flow (1.1, 1.2)
@@ -74,5 +74,10 @@ Native review assessed per work-unit commit; the user's consent per candidate is
   - Process deviation: the writer edited some files with Python scripts instead of Edit/Write; results verified by the parent (tests, validation, live run).
   - Hand-off to P18 (README): document `CSRF_SECRET`, `TRUST_PROXY`, `COOKIE_SECURE`, `DB_PATH`, `PORT`, `SEED_PASSWORD_*`.
 
+- T4 commit 792771b.
+- T5 (delegated writer, branch `feat/e5s5-visibilidad`): RED observed (`Cannot find module './asignaciones'`), GREEN 220/220 via `npm test` (170 + 50 new); `openspec validate e5s5 --strict` valid; business modules untouched. Parent check of the projection with the real factory `crearPoliticas({asignaciones})`: for a request with all 5 socioeconomic fields (plus a nested snake_case one), `estudiante` and `asesor_financiero` see them, `comite_becas`, `direccion_academica` and an unknown role see none; the input is not mutated.
+  - Decisions: migration 003 `asignaciones` (UNIQUE tipo_recurso+recurso_id+usuario_id); `crearAsignaciones` with `asignar`, `reclamar` (advisor only, 409 `SOLICITUD_YA_ASIGNADA` if held by another), `asignarComiteACaso` (Q5 default: all active committee users, idempotent; committee users created later are not assigned to existing cases), `estaAsignado`, `listarPorRecurso`; audit entry `asignar` only for new assignments; policies are a factory `crearPoliticas` (puedeVerSolicitud / puedeVerCasoComite / puedeVerEstadoEvaluacion / puedeVerReportes / proyectarSolicitud / proyectarEvaluacion); fail-closed projection (unknown roles and direccion_academica never get socioeconomic fields, nested and lists included, snake_case and case variants); denied == not found (404 `RECURSO_NO_ENCONTRADO`, identical bodies), role mismatch on a route stays 403 (put `requerirRol` first); guard `requerirAccesoARecurso(cargar, {permitir, proyectar})`; student mapping: `usuario.estudianteId` if present else the user id as a string (users have no estudianteId yet).
+  - Size: ~900 added lines, mostly tests (NFR-003 table test = 20 cases) -> `size:exception` candidate at PR time.
+
 ## Next step
-T5 (P5, change `e5s5-...`) via delegated writer on a new branch stacked on `feat/e5s4-seguridad-web`.
+T6 (P6, change `e5s6-...`) collecting notifier + outbox + transaction helper via delegated writer on a new branch stacked on `feat/e5s5-visibilidad`.
