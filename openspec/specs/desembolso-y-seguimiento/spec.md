@@ -1,7 +1,7 @@
 # desembolso-y-seguimiento Specification
 
 ## Purpose
-TBD - created by archiving change e3s1-calendario-de-desembolso-para-credito-aprobado. Update Purpose after archive.
+Programar un calendario de desembolso para todo crédito aprobado, notificar al estudiante cuando un desembolso ocurre, y marcar como vencido un desembolso no confirmado tras el plazo definido.
 
 ## Requirements
 

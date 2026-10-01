@@ -1,7 +1,7 @@
 # solicitud-de-credito Specification
 
 ## Purpose
-TBD - created by archiving change e1s1-registro-de-solicitud-de-credito-con-datos-socio. Update Purpose after archive.
+Permitir que un estudiante registre una solicitud de crédito con sus datos socioeconómicos, que el sistema valide los documentos requeridos antes de enviarla a revisión, y que un asesor financiero la apruebe o rechace.
 
 ## Requirements
 
