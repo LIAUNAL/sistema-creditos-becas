@@ -235,9 +235,12 @@ test('el token de otra sesión, uno alterado o ninguna sesión se rechazan con 4
     headers: { Cookie: a.cookie, 'X-CSRF-Token': b.csrf },
   });
   assert.strictEqual(cruzado.status, 403);
+  // El último carácter se cambia SIEMPRE por uno distinto: si el token ya terminara en "0",
+  // reemplazarlo por "0" lo dejaría idéntico al original y el test fallaría 1 de cada 16 veces.
+  const ultimo = a.csrf.slice(-1);
   const alterado = await fetch(`${base}/logout`, {
     method: 'POST',
-    headers: { Cookie: a.cookie, 'X-CSRF-Token': `${a.csrf.slice(0, -1)}0` },
+    headers: { Cookie: a.cookie, 'X-CSRF-Token': `${a.csrf.slice(0, -1)}${ultimo === '0' ? '1' : '0'}` },
   });
   assert.strictEqual(alterado.status, 403);
   const sinSesion = await fetch(`${base}/logout`, { method: 'POST', headers: { 'X-CSRF-Token': a.csrf } });

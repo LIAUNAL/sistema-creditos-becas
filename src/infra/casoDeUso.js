@@ -12,14 +12,22 @@ const LIMITE_POR_DEFECTO = 50;
 // Despues: se relanza el error original, o se devuelve el resultado. Si `persistir` o el outbox
 // fallan, se revierte todo y se propaga ESE error (el de la operacion, si existia, queda en
 // `error.errorOperacion`). `persistir` debe ser sincrona.
-async function ejecutarCasoDeUso({ db, colector, reloj, operacion, persistir }) {
+//
+// Story 5.7: `unidadDeTrabajo` (opcional, ver unidadDeTrabajo.js) es la unidad de ESTE caso de uso.
+// La operacion corre dentro de su contexto (`unidadDeTrabajo.correr`) para que los repositorios
+// resuelvan el mismo mapa de identidad, y en la misma transaccion, ANTES de `persistir` y del
+// outbox, se llama `unidadDeTrabajo.volcar(db)`: estado y outbox se confirman juntos o ninguno,
+// tambien cuando la operacion lanzo tras mutar. `persistir` pasa a ser opcional cuando hay unidad.
+async function ejecutarCasoDeUso({ db, colector, reloj, operacion, persistir, unidadDeTrabajo }) {
   const recolectadas = [];
   let resultado;
   let errorOperacion;
   let fallo = false;
 
+  const correrOperacion = () => colector.correrEnContexto(recolectadas, operacion);
+
   try {
-    resultado = await colector.correrEnContexto(recolectadas, operacion);
+    resultado = await (unidadDeTrabajo ? unidadDeTrabajo.correr(correrOperacion) : correrOperacion());
   } catch (error) {
     fallo = true;
     errorOperacion = error;
@@ -27,7 +35,11 @@ async function ejecutarCasoDeUso({ db, colector, reloj, operacion, persistir }) 
 
   try {
     enTransaccion(db, () => {
-      const devuelto = persistir({ resultado, error: errorOperacion });
+      if (unidadDeTrabajo) unidadDeTrabajo.volcar(db);
+      const devuelto =
+        persistir === undefined && unidadDeTrabajo
+          ? undefined
+          : persistir({ resultado, error: errorOperacion });
       if (devuelto && typeof devuelto.then === 'function') {
         devuelto.then(undefined, () => {});
         const error = new TypeError('persistir debe ser sincrona');

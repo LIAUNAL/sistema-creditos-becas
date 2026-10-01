@@ -17,6 +17,8 @@
  * entradas configurables / inyectadas (ver supuestos en el change).
  */
 
+const { crearRepositorioDocumentosEnMemoria } = require('./repositoriosEnMemoria');
+
 const DOCUMENTOS_REQUERIDOS_POR_DEFECTO = Object.freeze([
   'identificacion',
   'certificado_ingresos',
@@ -82,13 +84,13 @@ class EnvioSolicitudCredito {
     notificador,
     documentosRequeridos = DOCUMENTOS_REQUERIDOS_POR_DEFECTO,
     formatosPermitidos = FORMATOS_PERMITIDOS_POR_DEFECTO,
+    repositorio,
   }) {
     this.registro = registro;
     this._notificador = notificador;
     this._documentosRequeridos = [...documentosRequeridos];
     this._formatosPermitidos = formatosPermitidos.map((f) => f.toLowerCase());
-    /** @type {Map<string, Map<string, object>>} solicitudId -> (tipo -> documento) */
-    this._documentos = new Map();
+    this._repositorio = repositorio ?? crearRepositorioDocumentosEnMemoria();
   }
 
   _solicitudEnBorrador(solicitudId) {
@@ -102,7 +104,7 @@ class EnvioSolicitudCredito {
 
   /** @returns {object[]} documentos cargados de la solicitud */
   documentosDe(solicitudId) {
-    return [...(this._documentos.get(solicitudId)?.values() ?? [])];
+    return this._repositorio.listarDocumentos(solicitudId);
   }
 
   /**
@@ -120,8 +122,7 @@ class EnvioSolicitudCredito {
     }
 
     const documento = { tipo, nombreArchivo };
-    if (!this._documentos.has(solicitudId)) this._documentos.set(solicitudId, new Map());
-    this._documentos.get(solicitudId).set(tipo, documento);
+    this._repositorio.guardarDocumento(solicitudId, documento);
     return documento;
   }
 
@@ -135,7 +136,7 @@ class EnvioSolicitudCredito {
   confirmarEnvio(solicitudId) {
     const solicitud = this._solicitudEnBorrador(solicitudId);
 
-    const cargados = this._documentos.get(solicitudId) ?? new Map();
+    const cargados = new Set(this._repositorio.listarDocumentos(solicitudId).map((d) => d.tipo));
     const faltantes = this._documentosRequeridos.filter((tipo) => !cargados.has(tipo));
     if (faltantes.length > 0) {
       throw new ErrorDocumentosFaltantes(faltantes);
