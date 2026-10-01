@@ -32,13 +32,14 @@ const DOCUMENTOS = Object.freeze([
   Object.freeze({ tipo: 'certificado_matricula', nombreArchivo: 'matricula.png' }),
 ]);
 
-async function levantarAplicacion() {
+// `reloj` (opcional): reloj inyectado, p. ej. uno mutable para probar la revision de vencidos.
+// `vencimientos` (opcional): `{ plazoConfirmacionDias, plazosPorTipoCredito }` de la revision (Story 5.15).
+async function levantarAplicacion({ reloj = crearRelojFijo(new Date('2026-05-04T12:30:00.000Z')), vencimientos } = {}) {
   const db = abrirBaseDeDatos({ ruta: ':memory:' });
   ejecutarMigraciones(db);
   await sembrarUsuarios({ db, entorno: CLAVES });
-  const reloj = crearRelojFijo(new Date('2026-05-04T12:30:00.000Z'));
   const csrf = crearCsrf({ secreto: 'secreto-de-prueba-0123456789' });
-  const aplicacion = crearAplicacionWeb({ db, reloj, csrf });
+  const aplicacion = crearAplicacionWeb({ db, reloj, csrf, vencimientos });
   const servidor = await iniciarServidor({ puerto: 0, rutas: aplicacion.rutas, ...aplicacion.opcionesServidor });
   return {
     db,

@@ -15,21 +15,22 @@ const { crearRutasDireccion } = require('./paginasDireccion');
  * Devuelve `{ rutas, opcionesServidor }` listos para `iniciarServidor`. `main.js` y las pruebas
  * usan exactamente este cableado.
  */
-function crearAplicacionWeb({ db, reloj, csrf = crearCsrf(), auditoria = crearAuditoria({ db, reloj }) }) {
+function crearAplicacionWeb({ db, reloj, csrf = crearCsrf(), auditoria = crearAuditoria({ db, reloj }), vencimientos }) {
   const autenticacion = crearAutenticacion({ db, reloj, auditoria, csrf });
-  const contexto = crearContextoApp({ db, reloj, auditoria });
+  const contexto = crearContextoApp({ db, reloj, auditoria, vencimientos });
   const paginas = crearRutasPaginas({ servicio: contexto.servicioSolicitudes, autenticacion, csrf });
   const paginasAsesor = crearRutasAsesor({
     servicioAsesor: contexto.servicioAsesor,
     servicioCondiciones: contexto.servicioCondiciones,
     servicioDesembolsos: contexto.servicioDesembolsos,
     servicioDireccion: contexto.servicioDireccion,
+    servicioVencimientos: contexto.servicioVencimientos,
     autenticacion,
     csrf,
   });
   const rutasBecas = crearRutasBecas({ servicioBecas: contexto.servicioBecas, autenticacion, csrf });
   const rutasComite = crearRutasComite({ servicioComite: contexto.servicioComite, autenticacion, csrf });
-  const rutasDireccion = crearRutasDireccion({ autenticacion, csrf });
+  const rutasDireccion = crearRutasDireccion({ servicioVencimientos: contexto.servicioVencimientos, autenticacion, csrf });
   return {
     rutas: [
       ...autenticacion.rutas,

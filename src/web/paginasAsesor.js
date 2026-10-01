@@ -5,6 +5,7 @@ const { mapearError } = require('./errores');
 const { responderHtml, redirigir } = require('./respuestas');
 const { MAXIMO_CUOTAS } = require('../app/servicioCondiciones');
 const { vistaCola, vistaDetalleAsesor, vistaResumenDireccion, vistaError } = require('./vistas');
+const { bloqueVencimientos, marcadosDeConsulta } = require('./vistasVencimientos');
 
 // Solo se aceptan campos de texto del formulario (igual que en las paginas del estudiante).
 async function leerCampos(leerCuerpo) {
@@ -33,7 +34,15 @@ const ERRORES_DE_TERMINOS = Object.freeze({
  * academica (Story 5.9). Cada ruta pasa por `requerirRol`: sin sesion -> /login, otro rol -> 403.
  * Un recurso que no existe o no es visible para el asesor da el mismo 404 (regla P5).
  */
-function crearRutasAsesor({ servicioAsesor, servicioCondiciones, servicioDesembolsos, servicioDireccion, autenticacion, csrf }) {
+function crearRutasAsesor({
+  servicioAsesor,
+  servicioCondiciones,
+  servicioDesembolsos,
+  servicioDireccion,
+  servicioVencimientos,
+  autenticacion,
+  csrf,
+}) {
   const { requerirRol, obtenerUsuario, obtenerIdSesion } = autenticacion;
   const tokenDe = (req) => csrf.generar(obtenerIdSesion(req));
 
@@ -76,7 +85,25 @@ function crearRutasAsesor({ servicioAsesor, servicioCondiciones, servicioDesembo
 
   const cola = asesor(async (contexto) => {
     const solicitudes = await servicioAsesor.listarCola(contexto.usuario);
-    responderHtml(contexto.res, 200, vistaCola({ usuario: contexto.usuario, csrf: contexto.csrf, cola: solicitudes }));
+    const marcados = marcadosDeConsulta(contexto.url.searchParams.get('marcados'));
+    responderHtml(
+      contexto.res,
+      200,
+      vistaCola({
+        usuario: contexto.usuario,
+        csrf: contexto.csrf,
+        cola: solicitudes,
+        bloqueVencimientos: bloqueVencimientos({ csrf: contexto.csrf, accion: '/asesor/vencimientos/revisar', marcados }),
+      }),
+    );
+  });
+
+  // Story 5.15: revision manual de vencidos por el asesor (mismo caso de uso que direccion y el temporizador).
+  const revisarVencimientos = asesor(async (contexto) => {
+    const { marcados } = await servicioVencimientos.revisarVencimientos({
+      actor: { nombre: contexto.usuario.nombre_usuario, rol: contexto.usuario.rol },
+    });
+    return redirigir(contexto.res, `/asesor/cola?marcados=${marcados}`);
   });
 
   const reclamar = asesor(async (contexto) => {
@@ -166,6 +193,7 @@ function crearRutasAsesor({ servicioAsesor, servicioCondiciones, servicioDesembo
     ['POST', '/asesor/solicitudes/:id/aprobar', aprobar],
     ['POST', '/asesor/solicitudes/:id/rechazar', rechazar],
     ['POST', '/asesor/desembolsos/:id/ejecutar', ejecutarDesembolso],
+    ['POST', '/asesor/vencimientos/revisar', revisarVencimientos],
     ['GET', '/direccion/solicitudes/:id', resumenDireccion],
   ];
 }

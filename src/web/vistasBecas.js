@@ -2,6 +2,7 @@
 
 const { html } = require('./html');
 const { pagina, resumen, campoDeTexto, campoCsrf } = require('./vistas');
+const { bloqueVencimientos } = require('./vistasVencimientos');
 
 // Vistas HTML de becas (Story 5.13): pantallas del estudiante (listado, solicitud y pagina de estado),
 // del comite (cola, detalle y decision) y el aterrizaje de direccion. Todo valor interpolado pasa por la
@@ -256,14 +257,15 @@ ${enRevision ? formularioDecision({ caso, csrf, valores, errores }) : ''}
 // ---------------------------------------------------------------- Direccion academica
 
 // Aterrizaje minimo: P17 reemplaza este contenido por los informes consolidados. Sin datos socioeconomicos.
-function vistaInicioDireccion({ usuario, csrf }) {
+function vistaInicioDireccion({ usuario, csrf, marcados = null, moraPorPeriodo = null }) {
   return pagina({
     titulo: 'Inicio de dirección académica',
     usuario,
     csrf,
     contenido: html`<h1>Inicio de dirección académica</h1>
 <p>Los informes consolidados estarán disponibles aquí.</p>
-<p>Mientras tanto, puede abrir el resumen de una solicitud de crédito si conoce su identificador.</p>`,
+<p>Mientras tanto, puede abrir el resumen de una solicitud de crédito si conoce su identificador.</p>
+${bloqueVencimientos({ csrf, accion: '/direccion/vencimientos/revisar', marcados, moraPorPeriodo })}`,
   });
 }
 

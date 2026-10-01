@@ -2,7 +2,8 @@
 
 const { AsyncLocalStorage } = require('node:async_hooks');
 
-// D6: notificador colector. Implementa los cuatro metodos del puerto de notificacion; cada
+// D6: notificador colector. Implementa los cuatro metodos del puerto de notificacion (mas
+// `notificarDesembolsoVencido`, aditivo, de la Story 5.15); cada
 // llamada solo registra el payload en memoria, en el colector del CASO DE USO ACTUAL
 // (sincrono, sin tocar la base de datos, sin lanzar para una llamada valida).
 //
@@ -54,6 +55,11 @@ function crearNotificadorColector() {
     },
     notificarDesembolso(payload) {
       registrar('notificarDesembolso', 'desembolso', 'solicitud', payload.solicitudId, payload);
+    },
+    // Story 5.15: metodo aditivo (no forma parte del puerto de los modulos de negocio); lo usa el caso de
+    // uso de revision de vencidos para dejar el aviso en el outbox junto con el cambio de estado.
+    notificarDesembolsoVencido(payload) {
+      registrar('notificarDesembolsoVencido', 'desembolso_vencido', 'solicitud', payload.solicitudId, payload);
     },
   };
 }
