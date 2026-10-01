@@ -2,7 +2,7 @@
 
 const crypto = require('node:crypto');
 const { verificarContrasena, hashearContrasena } = require('../infra/contrasenas');
-const { responderJson } = require('./respuestas');
+const { responderJson, redirigir } = require('./respuestas');
 const { crearGuardias, errorHttp } = require('./guardias');
 const { crearCsrf } = require('./csrf');
 const { crearPoliticaCookies } = require('./cookies');
@@ -105,7 +105,31 @@ function crearAutenticacion({
   const cookieDeSesion = (req, valor, maxAgeSegundos) =>
     cookies.serializar(req, NOMBRE_COOKIE, valor, maxAgeSegundos);
 
-  async function login({ req, res, leerCuerpo }) {
+  // Los formularios del navegador envian x-www-form-urlencoded; los clientes de API, JSON.
+  const esFormulario = (req) =>
+    (req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase() === 'application/x-www-form-urlencoded';
+
+  // Codigos de error que un formulario muestra en /login (el resto se propaga como siempre).
+  const ERRORES_DE_FORMULARIO = Object.freeze({
+    CREDENCIALES_INVALIDAS: 'credenciales',
+    DEMASIADOS_INTENTOS: 'intentos',
+    FORMATO_INVALIDO: 'formato',
+  });
+
+  // Formulario: exito -> 303 a /solicitudes; fallo -> 303 a /login?error=... (post/redirect/get).
+  // JSON: sin cambios (cuerpo JSON y errores JSON).
+  async function login(contexto) {
+    if (!esFormulario(contexto.req)) return iniciarSesion(contexto, false);
+    try {
+      return await iniciarSesion(contexto, true);
+    } catch (error) {
+      const motivo = ERRORES_DE_FORMULARIO[error?.codigo];
+      if (!motivo) throw error;
+      return redirigir(contexto.res, `/login?error=${motivo}`);
+    }
+  }
+
+  async function iniciarSesion({ req, res, leerCuerpo }, desdeFormulario) {
     const cuerpo = await leerCuerpo();
     const { nombre_usuario: nombre, contrasena } = cuerpo ?? {};
     if (typeof nombre !== 'string' || typeof contrasena !== 'string' || nombre === '') {
@@ -148,6 +172,10 @@ function crearAutenticacion({
       detalle: { ip },
     });
     res.setHeader('Set-Cookie', cookieDeSesion(req, token, Math.floor(duracionSesionMs / 1000)));
+    if (desdeFormulario) {
+      redirigir(res, '/solicitudes');
+      return;
+    }
     responderJson(res, 200, {
       id: usuario.id,
       nombre_usuario: usuario.nombre_usuario,
@@ -168,6 +196,10 @@ function crearAutenticacion({
       });
     }
     res.setHeader('Set-Cookie', cookieDeSesion(req, '', 0));
+    if (esFormulario(req)) {
+      redirigir(res, '/login');
+      return;
+    }
     responderJson(res, 200, {});
   }
 

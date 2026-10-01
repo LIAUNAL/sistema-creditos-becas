@@ -1,0 +1,237 @@
+/* Hoja de estilos unica. Fuentes del sistema, contraste alto y foco siempre visible. */
+:root {
+  --texto: #1a1a1a;
+  --fondo: #ffffff;
+  --acento: #0b4f9c;
+  --acento-oscuro: #083a75;
+  --borde: #6b7280;
+  --error: #9b1c1c;
+  --error-fondo: #fdecec;
+  --suave: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--texto);
+  background: var(--fondo);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 3px solid #b45309;
+  outline-offset: 2px;
+}
+
+.salto {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  padding: 0.5rem 1rem;
+  background: var(--fondo);
+  color: var(--acento);
+  border: 2px solid var(--acento);
+}
+
+.salto:focus {
+  top: 0.5rem;
+}
+
+.encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--acento-oscuro);
+  color: #ffffff;
+}
+
+.encabezado .marca {
+  margin: 0;
+  font-weight: 700;
+}
+
+.encabezado nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.encabezado a {
+  color: #ffffff;
+}
+
+main {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin-top: 0;
+}
+
+h2 {
+  font-size: 1.3rem;
+}
+
+a {
+  color: var(--acento);
+}
+
+.en-linea {
+  display: inline;
+  margin: 0;
+}
+
+.campo {
+  margin-bottom: 1.25rem;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.ayuda {
+  margin: 0 0 0.25rem;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+input[type="text"],
+input[type="password"],
+select {
+  width: 100%;
+  max-width: 30rem;
+  padding: 0.5rem;
+  font: inherit;
+  color: var(--texto);
+  background: var(--fondo);
+  border: 2px solid var(--borde);
+  border-radius: 4px;
+}
+
+[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+.error-campo {
+  margin: 0 0 0.25rem;
+  color: var(--error);
+  font-weight: 600;
+}
+
+.resumen-errores {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--error-fondo);
+  border: 2px solid var(--error);
+  border-radius: 4px;
+  color: var(--texto);
+}
+
+.resumen-errores h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+  color: var(--error);
+}
+
+.resumen-errores ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+button,
+.boton {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--acento);
+  border: 2px solid var(--acento);
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:hover,
+.boton:hover {
+  background: var(--acento-oscuro);
+}
+
+.boton-secundario {
+  color: #ffffff;
+  background: transparent;
+  border-color: #ffffff;
+}
+
+.boton-secundario:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+caption {
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 0.5rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--borde);
+  vertical-align: top;
+}
+
+th {
+  background: var(--suave);
+}
+
+.datos dt {
+  font-weight: 700;
+}
+
+.datos dd {
+  margin: 0 0 0.5rem;
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.pie {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 1.5rem;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}
