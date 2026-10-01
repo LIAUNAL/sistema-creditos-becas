@@ -16,8 +16,8 @@ const { crearRutasAvisos } = require('./paginasAvisos');
  * Devuelve `{ rutas, opcionesServidor }` listos para `iniciarServidor`. `main.js` y las pruebas
  * usan exactamente este cableado.
  */
-function crearAplicacionWeb({ db, reloj, csrf = crearCsrf(), auditoria = crearAuditoria({ db, reloj }), vencimientos }) {
-  const contexto = crearContextoApp({ db, reloj, auditoria, vencimientos });
+function crearAplicacionWeb({ db, reloj, csrf = crearCsrf(), auditoria = crearAuditoria({ db, reloj }), vencimientos, reportes }) {
+  const contexto = crearContextoApp({ db, reloj, auditoria, vencimientos, reportes });
   // El contador de avisos sin leer de la navegacion (Story 5.16) se calcula por peticion y de forma perezosa.
   const autenticacion = crearAutenticacion({
     db,
@@ -38,7 +38,12 @@ function crearAplicacionWeb({ db, reloj, csrf = crearCsrf(), auditoria = crearAu
   });
   const rutasBecas = crearRutasBecas({ servicioBecas: contexto.servicioBecas, autenticacion, csrf });
   const rutasComite = crearRutasComite({ servicioComite: contexto.servicioComite, autenticacion, csrf });
-  const rutasDireccion = crearRutasDireccion({ servicioVencimientos: contexto.servicioVencimientos, autenticacion, csrf });
+  const rutasDireccion = crearRutasDireccion({
+    servicioVencimientos: contexto.servicioVencimientos,
+    servicioReportes: contexto.servicioReportes,
+    autenticacion,
+    csrf,
+  });
   const rutasAvisos = crearRutasAvisos({ servicioAvisos: contexto.servicioAvisos, autenticacion, csrf });
   return {
     rutas: [

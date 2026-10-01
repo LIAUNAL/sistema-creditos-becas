@@ -7,6 +7,7 @@ const { crearAuditoria } = require('../infra/auditoria');
 const { relojSistema } = require('../infra/reloj');
 const { crearAplicacionWeb } = require('./aplicacionWeb');
 const { crearCsrf } = require('./csrf');
+const { umbralMoraDesdeEntorno } = require('../app/servicioReportes');
 const { iniciarPlanificadorVencimientos, intervaloDesdeEntorno } = require('../infra/planificador');
 
 async function main() {
@@ -30,7 +31,9 @@ async function main() {
     if (!/^\d+$/.test(plazoDias)) throw new Error(`VENCIMIENTOS_PLAZO_DIAS inválido: ${plazoDias} (entero de días)`);
     vencimientos = { plazoConfirmacionDias: Number(plazoDias) };
   }
-  const aplicacion = crearAplicacionWeb({ db, reloj: relojSistema, csrf, auditoria, vencimientos });
+  // Story 5.17: umbral de mora por defecto (UMBRAL_MORA_DEFECTO, fraccion entre 0 y 1; por defecto 0.10).
+  const reportes = { umbralMoraDefecto: umbralMoraDesdeEntorno(process.env.UMBRAL_MORA_DEFECTO) };
+  const aplicacion = crearAplicacionWeb({ db, reloj: relojSistema, csrf, auditoria, vencimientos, reportes });
 
   const { puerto: escucha, cerrar } = await iniciarServidor({
     puerto,

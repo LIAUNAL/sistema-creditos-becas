@@ -256,14 +256,15 @@ ${enRevision ? formularioDecision({ caso, csrf, valores, errores }) : ''}
 
 // ---------------------------------------------------------------- Direccion academica
 
-// Aterrizaje minimo: P17 reemplaza este contenido por los informes consolidados. Sin datos socioeconomicos.
+// Aterrizaje de direccion (enlaza a los informes de la Story 5.17). Sin datos socioeconomicos.
 function vistaInicioDireccion({ usuario, csrf, marcados = null, moraPorPeriodo = null }) {
   return pagina({
     titulo: 'Inicio de dirección académica',
     usuario,
     csrf,
     contenido: html`<h1>Inicio de dirección académica</h1>
-<p>Los informes consolidados estarán disponibles aquí.</p>
+<p>Consulte los informes consolidados de créditos y becas y la alerta de mora por periodo.</p>
+<p><a class="boton" href="/direccion/reportes">Abrir los reportes</a></p>
 <p>Mientras tanto, puede abrir el resumen de una solicitud de crédito si conoce su identificador.</p>
 ${bloqueVencimientos({ csrf, accion: '/direccion/vencimientos/revisar', marcados, moraPorPeriodo })}`,
   });

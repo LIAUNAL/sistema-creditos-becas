@@ -45,7 +45,8 @@ test('la migracion 009 conserva las filas existentes, sus ids y sus indices', ()
   db.prepare('DELETE FROM notifications WHERE id = 4').run();
   const antes = filas(db, 'SELECT * FROM notifications ORDER BY id');
 
-  const aplicadas = ejecutarMigraciones(db);
+  // Solo hasta la 009: las migraciones posteriores (010 en adelante) tienen sus propias pruebas.
+  const aplicadas = ejecutarMigraciones(db, MIGRACIONES.filter((m) => m.version <= 9));
 
   assert.deepStrictEqual(aplicadas, [9]);
   assert.deepStrictEqual(filas(db, 'SELECT * FROM notifications ORDER BY id'), antes);

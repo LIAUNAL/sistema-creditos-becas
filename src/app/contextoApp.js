@@ -25,6 +25,7 @@ const { crearServicioBecas } = require('./servicioBecas');
 const { crearServicioComite } = require('./servicioComite');
 const { crearServicioVencimientos } = require('./servicioVencimientos');
 const { crearServicioAvisos } = require('./servicioAvisos');
+const { crearServicioReportes } = require('./servicioReportes');
 
 /**
  * Construye UNA sola vez las piezas de larga vida de la aplicacion: colector de notificaciones,
@@ -32,7 +33,8 @@ const { crearServicioAvisos } = require('./servicioAvisos');
  * (servicios) crean su propia unidad de trabajo en cada llamada.
  */
 // `vencimientos` (opcional): `{ plazoConfirmacionDias, plazosPorTipoCredito }` de la revision de vencidos (Story 5.15).
-function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj }), vencimientos }) {
+// `reportes` (opcional): `{ umbralMoraDefecto }`, umbral de mora de los periodos sin configuracion propia (Story 5.17).
+function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj }), vencimientos, reportes }) {
   const colector = crearNotificadorColector();
   const repositorios = {
     solicitudes: crearRepositorioSolicitudesSqlite({ db }),
@@ -97,6 +99,7 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
   const servicioComite = crearServicioComite(piezas);
   const servicioVencimientos = crearServicioVencimientos({ ...piezas, opciones: vencimientos });
   const servicioAvisos = crearServicioAvisos(piezas);
+  const servicioReportes = crearServicioReportes({ ...piezas, opciones: reportes });
   return {
     colector,
     repositorios,
@@ -117,6 +120,7 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     servicioComite,
     servicioVencimientos,
     servicioAvisos,
+    servicioReportes,
   };
 }
 
