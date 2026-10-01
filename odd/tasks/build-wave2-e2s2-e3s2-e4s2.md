@@ -27,7 +27,7 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 - [x] T1 e2s2 — slice S5 `feat/e2s2-revision-casos-limitrofes` (spec 1.1-1.3, 2.1-2.3)
 - [x] T2 e3s2 — slice S6 (spec 1.1-1.2, 2.1-2.2)
 - [x] T3 e4s2 — slice S7 (spec 1.1-1.2, 2.1-2.2)
-- [ ] T4 close wave 2: `npx un-specweaver close --done` (after validate)
+- [x] T4 close wave 2: `npx un-specweaver close --done` — 3 archived, 0 failures. `validate --all --strict`: 6/10 pass; the 4 main specs (`solicitud-de-credito`, `desembolso-y-seguimiento`, `evaluacion-de-elegibilidad-para-becas`, `reportes-para-direccion-academica`) each fail only on the `[WARNING] Purpose section is still a placeholder` created by `archive`. Fix = write a real `## Purpose` in each `openspec/specs/*/spec.md` (product wording, pending).
 - [ ] T5 e1s3 — slice S8 (wave 3)
 - [ ] T6 e2s3 — slice S9 (wave 3)
 - [ ] T7 e3s3 — slice S10 (wave 3)
