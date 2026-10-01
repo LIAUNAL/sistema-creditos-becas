@@ -7,6 +7,7 @@ const { crearAuditoria } = require('../infra/auditoria');
 const { relojSistema } = require('../infra/reloj');
 const { crearAplicacionWeb } = require('./aplicacionWeb');
 const { crearCsrf } = require('./csrf');
+const { iniciarPlanificadorVencimientos, intervaloDesdeEntorno } = require('../infra/planificador');
 
 async function main() {
   const puerto = Number.parseInt(process.env.PORT ?? '3000', 10);
@@ -22,7 +23,14 @@ async function main() {
     console.warn('CSRF_SECRET no definido: secreto aleatorio por proceso (solo una instancia; los tokens caducan al reiniciar)');
   }
   // Identidad + casos de uso (repositorios SQLite, colector, modulos reales) + paginas del estudiante.
-  const aplicacion = crearAplicacionWeb({ db, reloj: relojSistema, csrf, auditoria });
+  // Story 5.15: plazo de confirmacion de desembolsos (VENCIMIENTOS_PLAZO_DIAS, por defecto 15 dias).
+  const plazoDias = process.env.VENCIMIENTOS_PLAZO_DIAS;
+  let vencimientos;
+  if (plazoDias !== undefined && plazoDias !== '') {
+    if (!/^\d+$/.test(plazoDias)) throw new Error(`VENCIMIENTOS_PLAZO_DIAS inválido: ${plazoDias} (entero de días)`);
+    vencimientos = { plazoConfirmacionDias: Number(plazoDias) };
+  }
+  const aplicacion = crearAplicacionWeb({ db, reloj: relojSistema, csrf, auditoria, vencimientos });
 
   const { puerto: escucha, cerrar } = await iniciarServidor({
     puerto,
@@ -32,7 +40,20 @@ async function main() {
   });
   console.log(`Servidor escuchando en el puerto ${escucha}`);
 
+  // Story 5.15: revision diaria de vencidos EN PROCESO (una sola instancia, R5). Corre al iniciar y cada
+  // VENCIMIENTOS_INTERVALO_MS (24 h por defecto); VENCIMIENTOS_AL_INICIAR=false omite la corrida de arranque.
+  const planificador = iniciarPlanificadorVencimientos({
+    revisar: async () => {
+      const { marcados } = await aplicacion.contexto.servicioVencimientos.revisarVencimientos();
+      if (marcados > 0) console.log(`Revisión de vencidos: ${marcados} desembolso(s) marcado(s) como vencido(s)`);
+    },
+    intervaloMs: intervaloDesdeEntorno(process.env.VENCIMIENTOS_INTERVALO_MS),
+    ejecutarAlIniciar: process.env.VENCIMIENTOS_AL_INICIAR !== 'false',
+    alError: (error) => console.error('Revisión de vencidos fallida:', error.message),
+  });
+
   const detener = () => {
+    planificador.detener();
     cerrar()
       .then(() => db.close())
       .then(

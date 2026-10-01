@@ -9,6 +9,25 @@ const { crearEjecucionDesembolso } = require('../desembolso/ejecucionDesembolso'
 
 const esperar = () => new Promise((resolve) => setImmediate(resolve));
 
+test('Story 5.15: notificarDesembolsoVencido registra tipo desembolso_vencido para la solicitud y copia el payload', () => {
+  const colector = crearNotificadorColector();
+  const recolectadas = [];
+  const payload = { solicitudId: 's1', desembolsoId: 'd1', numeroCuota: 2, fecha: '2026-03-15', monto: 250000 };
+
+  colector.correrEnContexto(recolectadas, () => colector.notificarDesembolsoVencido(payload));
+  payload.monto = 1;
+
+  assert.deepEqual(recolectadas, [
+    {
+      tipo: 'desembolso_vencido',
+      destinatarioTipo: 'solicitud',
+      destinatarioId: 's1',
+      payload: { solicitudId: 's1', desembolsoId: 'd1', numeroCuota: 2, fecha: '2026-03-15', monto: 250000 },
+    },
+  ]);
+  assert.throws(() => colector.notificarDesembolsoVencido(payload), { codigo: 'NOTIFICADOR_SIN_CONTEXTO' });
+});
+
 test('Escenario: cada payload queda registrado en memoria y ninguna llamada lanza error', () => {
   const colector = crearNotificadorColector();
   const recolectadas = [];

@@ -321,7 +321,8 @@ ${usuario?.rol === 'direccion_academica' ? html`<p><a href="/direccion">Volver a
 
 // ---------------------------------------------------------------- Asesor financiero (Story 5.9)
 
-function vistaCola({ usuario, csrf, cola, resumenErrores = null }) {
+// `bloqueVencimientos`: HTML ya renderizado de la revision manual de vencidos (Story 5.15), opcional.
+function vistaCola({ usuario, csrf, cola, resumenErrores = null, bloqueVencimientos = '' }) {
   const contenido = cola.length === 0
     ? html`<p>No hay solicitudes pendientes de revisión.</p>`
     : html`<table>
@@ -350,7 +351,8 @@ ${campoCsrf(csrf)}
     contenido: html`<h1>Cola de revisión</h1>
 ${resumenErrores ? resumen(resumenErrores.titulo, resumenErrores.elementos) : ''}
 <p>Reclame una solicitud para ver sus datos y decidirla.</p>
-${contenido}`,
+${contenido}
+${bloqueVencimientos}`,
   });
 }
 
