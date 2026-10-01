@@ -25,7 +25,7 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 
 ## Tasks
 - [x] T1 e2s2 — slice S5 `feat/e2s2-revision-casos-limitrofes` (spec 1.1-1.3, 2.1-2.3)
-- [ ] T2 e3s2 — slice S6 (spec 1.1-1.2, 2.1-2.2)
+- [x] T2 e3s2 — slice S6 (spec 1.1-1.2, 2.1-2.2)
 - [ ] T3 e4s2 — slice S7 (spec 1.1-1.2, 2.1-2.2)
 - [ ] T4 close wave 2: `npx un-specweaver close --done` (after validate)
 - [ ] T5 e1s3 — slice S8 (wave 3)
@@ -43,5 +43,11 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 - T1 e2s2 (delegated writer): RED observed (`Cannot find module './revisionComite'`), GREEN 56/56 via `npm test`; `openspec validate e2s2 --strict` valid. New files only; `calculoElegibilidad.js` untouched.
   - Assumptions to confirm (spec silent): in-memory queue; notifier port `notificarCasoLimitrofe({idCaso, puntaje})` (async); states `en_revision_comite` -> `otorgada`/`denegada`; history entries `ingreso_cola_comite` and `decision_comite`; decision requires non-empty comment; duplicate processing neither re-queues nor re-notifies; `datos_incompletos` is neither queued nor decided; no committee member identity.
 
+- T1 commit 8ecde7b: assessed medium, 402 lines, `review_due` = `slice_budget_reached`. Consent v3 relayed to the user; user chose "Skip this time" (declined_this_candidate, target sha256:b9d0be45...). Decline invocation executed once and validated; no review lineage created. Outcome: declined.
+
+- T2 e3s2 (delegated writer): RED observed (`Cannot find module './ejecucionDesembolso'`), GREEN 60/60 via `npm test`; `openspec validate e3s2 --strict` valid. New files in `src/desembolso/`; `calendarioDesembolso.js` untouched.
+  - Assumptions to confirm (spec silent): execution date from injected `reloj` (ISO date, `fechaEjecucion`); caller triggers `ejecutar`; only `programado` can be executed (else `ErrorEjecucionDesembolso('DESEMBOLSO_NO_PROGRAMADO')`, no notification); notifier port `notificarDesembolso({solicitudId, desembolsoId, numeroCuota, fecha, monto})`; view `consultarHistorial` returns all passed disbursements with `fechaEjecucion` null while programmed; state set to `ejecutado` before notifying and NOT rolled back if the notifier throws.
+  - CONFIRMED GAP (user decision needed): `src/reportes/reporteConsolidado.js` sums only `desembolsado`, e3s2 emits `ejecutado` -> executed disbursements are missing from report totals. Not touched.
+
 ## Next step
-T2 e3s2 via delegated writer on a new branch stacked on S5.
+T3 e4s2 writer on a new branch stacked on S6.
