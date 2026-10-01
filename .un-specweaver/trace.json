@@ -1,7 +1,7 @@
 {
   "source": "_bmad-output/planning-artifacts/epics.md",
   "project": "Epics y Stories — Sistema de Créditos y Becas",
-  "lang": "es",
+  "lang": "en",
   "requirements": {
     "functional": [],
     "nonFunctional": [],
@@ -265,6 +265,474 @@
       },
       "requirementName": "Alerta de tasa de mora sobre el umbral definido",
       "scenarios": 2
+    },
+    {
+      "changeId": "e5s1-fundacion-del-servidor-http",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.1",
+        "storyTitle": "Fundación del servidor HTTP"
+      },
+      "requirements": [
+        "FR-052",
+        "NFR-006"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-052",
+          "NFR-006"
+        ],
+        "epic": []
+      },
+      "requirementName": "Fundación del servidor HTTP",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s2-base-de-datos-migraciones-y-registro-de-auditori",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.2",
+        "storyTitle": "Base de datos, migraciones y registro de auditoría"
+      },
+      "requirements": [
+        "FR-052",
+        "NFR-001",
+        "NFR-005"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-052",
+          "NFR-001",
+          "NFR-005"
+        ],
+        "epic": []
+      },
+      "requirementName": "Base de datos, migraciones y registro de auditoría",
+      "scenarios": 3
+    },
+    {
+      "changeId": "e5s3-identidad-usuarios-sesiones-y-guardia-de-roles",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.3",
+        "storyTitle": "Identidad: usuarios, sesiones y guardia de roles"
+      },
+      "requirements": [
+        "FR-040",
+        "NFR-004"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-040",
+          "NFR-004"
+        ],
+        "epic": []
+      },
+      "requirementName": "Identidad: usuarios, sesiones y guardia de roles",
+      "scenarios": 5
+    },
+    {
+      "changeId": "e5s4-linea-base-de-seguridad-web",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.4",
+        "storyTitle": "Línea base de seguridad web"
+      },
+      "requirements": [
+        "NFR-004"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "NFR-004"
+        ],
+        "epic": []
+      },
+      "requirementName": "Línea base de seguridad web",
+      "scenarios": 5
+    },
+    {
+      "changeId": "e5s5-visibilidad-y-asignacion-de-casos",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.5",
+        "storyTitle": "Visibilidad y asignación de casos"
+      },
+      "requirements": [
+        "FR-041",
+        "NFR-003"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-041",
+          "NFR-003"
+        ],
+        "epic": []
+      },
+      "requirementName": "Visibilidad y asignación de casos",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s6-notificador-colector-y-bandeja-de-salida-outbox",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.6",
+        "storyTitle": "Notificador colector y bandeja de salida (outbox)"
+      },
+      "requirements": [
+        "FR-050",
+        "NFR-005"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-050",
+          "NFR-005"
+        ],
+        "epic": []
+      },
+      "requirementName": "Notificador colector y bandeja de salida (outbox)",
+      "scenarios": 5
+    },
+    {
+      "changeId": "e5s7-persistencia-de-los-modulos-de-solicitud-de-cred",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.7",
+        "storyTitle": "Persistencia de los módulos de solicitud de crédito"
+      },
+      "requirements": [
+        "FR-052",
+        "NFR-005",
+        "NFR-006"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-052",
+          "NFR-005",
+          "NFR-006"
+        ],
+        "epic": []
+      },
+      "requirementName": "Persistencia de los módulos de solicitud de crédito",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s8-flujo-del-estudiante-solicitud-de-credito",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.8",
+        "storyTitle": "Flujo del estudiante: solicitud de crédito"
+      },
+      "requirements": [
+        "FR-042",
+        "FR-001",
+        "FR-002",
+        "NFR-003"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-042",
+          "FR-001",
+          "FR-002",
+          "NFR-003"
+        ],
+        "epic": []
+      },
+      "requirementName": "Flujo del estudiante: solicitud de crédito",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s9-flujo-del-asesor-financiero-cola-y-decision",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.9",
+        "storyTitle": "Flujo del asesor financiero: cola y decisión"
+      },
+      "requirements": [
+        "FR-043",
+        "FR-041",
+        "FR-003",
+        "FR-004"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-043",
+          "FR-041",
+          "FR-003",
+          "FR-004"
+        ],
+        "epic": []
+      },
+      "requirementName": "Flujo del asesor financiero: cola y decisión",
+      "scenarios": 5
+    },
+    {
+      "changeId": "e5s10-condiciones-del-credito-y-calendario-de-desembol",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.10",
+        "storyTitle": "Condiciones del crédito y calendario de desembolso"
+      },
+      "requirements": [
+        "FR-044",
+        "FR-020"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-044",
+          "FR-020"
+        ],
+        "epic": []
+      },
+      "requirementName": "Condiciones del crédito y calendario de desembolso",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s11-becas-backend-1-solicitud-y-elegibilidad-automat",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.11",
+        "storyTitle": "Becas, backend 1: solicitud y elegibilidad automática"
+      },
+      "requirements": [
+        "FR-045",
+        "FR-010"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-045",
+          "FR-010"
+        ],
+        "epic": []
+      },
+      "requirementName": "Becas, backend 1: solicitud y elegibilidad automática",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s12-becas-backend-2-comite-y-otorgamiento",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.12",
+        "storyTitle": "Becas, backend 2: comité y otorgamiento"
+      },
+      "requirements": [
+        "FR-046",
+        "FR-041",
+        "FR-011",
+        "NFR-001"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-046",
+          "FR-041",
+          "FR-011",
+          "NFR-001"
+        ],
+        "epic": []
+      },
+      "requirementName": "Becas, backend 2: comité y otorgamiento",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s13-interfaz-de-becas-y-estado-del-estudiante",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.13",
+        "storyTitle": "Interfaz de becas y estado del estudiante"
+      },
+      "requirements": [
+        "FR-047",
+        "FR-012"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-047",
+          "FR-012"
+        ],
+        "epic": []
+      },
+      "requirementName": "Interfaz de becas y estado del estudiante",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s14-ejecucion-de-desembolso",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.14",
+        "storyTitle": "Ejecución de desembolso"
+      },
+      "requirements": [
+        "FR-048",
+        "FR-021"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-048",
+          "FR-021"
+        ],
+        "epic": []
+      },
+      "requirementName": "Ejecución de desembolso",
+      "scenarios": 4
+    },
+    {
+      "changeId": "e5s15-revision-de-vencidos",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.15",
+        "storyTitle": "Revisión de vencidos"
+      },
+      "requirements": [
+        "FR-049",
+        "FR-022"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-049",
+          "FR-022"
+        ],
+        "epic": []
+      },
+      "requirementName": "Revisión de vencidos",
+      "scenarios": 5
+    },
+    {
+      "changeId": "e5s16-bandeja-de-notificaciones",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.16",
+        "storyTitle": "Bandeja de notificaciones"
+      },
+      "requirements": [
+        "FR-050",
+        "NFR-003"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-050",
+          "NFR-003"
+        ],
+        "epic": []
+      },
+      "requirementName": "Bandeja de notificaciones",
+      "scenarios": 3
+    },
+    {
+      "changeId": "e5s17-reportes-y-umbral-de-mora",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.17",
+        "storyTitle": "Reportes y umbral de mora"
+      },
+      "requirements": [
+        "FR-051",
+        "FR-030",
+        "FR-031"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "FR-051",
+          "FR-030",
+          "FR-031"
+        ],
+        "epic": []
+      },
+      "requirementName": "Reportes y umbral de mora",
+      "scenarios": 5
+    },
+    {
+      "changeId": "e5s18-endurecimiento-y-verificacion-de-punta-a-punta",
+      "capability": "aplicacion-web",
+      "revision": 1,
+      "delta": "ADDED",
+      "bmad": {
+        "epic": 5,
+        "epicTitle": "Aplicación web",
+        "story": "5.18",
+        "storyTitle": "Endurecimiento y verificación de punta a punta"
+      },
+      "requirements": [
+        "NFR-002",
+        "NFR-003",
+        "FR-052"
+      ],
+      "requirementsFrom": {
+        "story": [
+          "NFR-002",
+          "NFR-003",
+          "FR-052"
+        ],
+        "epic": []
+      },
+      "requirementName": "Endurecimiento y verificación de punta a punta",
+      "scenarios": 4
     }
   ]
 }
