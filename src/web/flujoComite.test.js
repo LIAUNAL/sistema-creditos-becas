@@ -379,7 +379,10 @@ test('tras la decision el estudiante ve su beca otorgada y el caso decidido sigu
   const vistaComite = json(await miembro.get(caso(id)));
 
   assert.strictEqual(vistaEstudiante.becaOtorgada, true);
-  assert.ok(!JSON.stringify(vistaEstudiante).includes(COMENTARIO), 'el estudiante no ve el comentario del comite');
+  // P13: la consulta de estado 2.3 incluye la decision del comite y su comentario (antes era un hueco conocido).
+  assert.strictEqual(vistaEstudiante.decisionComite, 'otorgada');
+  assert.strictEqual(vistaEstudiante.comentarioComite, COMENTARIO);
+  assert.ok(!('puntaje' in vistaEstudiante), 'el estudiante nunca ve el puntaje');
   assert.strictEqual(vistaComite.estado, 'otorgada');
   assert.strictEqual(vistaComite.historial.at(-1).comentario, COMENTARIO);
 });
@@ -504,7 +507,7 @@ test('/comite lista la cola del integrante en una pagina accesible con enlace al
 
   assert.strictEqual(pagina.estado, 200, pagina.texto);
   assert.ok(pagina.texto.includes('2026-2'));
-  assert.ok(pagina.texto.includes(`href="/api/comite/casos/${id}"`));
+  assert.ok(pagina.texto.includes(`href="/comite/casos/${id}"`));
   assert.ok(pagina.texto.includes('<caption>'));
   assert.ok(pagina.texto.includes('action="/logout"'));
 });

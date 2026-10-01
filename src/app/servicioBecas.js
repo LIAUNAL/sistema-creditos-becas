@@ -119,21 +119,41 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas, asignac
     'SELECT id FROM scholarship_applications WHERE estudiante_id = ? AND periodo_academico = ?',
   );
   const buscarPremio = db.prepare('SELECT 1 AS existe FROM scholarship_awards WHERE application_id = ?');
+  const listarPorEstudiante = db.prepare(
+    'SELECT * FROM scholarship_applications WHERE estudiante_id = ? ORDER BY creada_en DESC, rowid DESC',
+  );
 
   // Vista del estudiante (reglas de la consulta de estado 2.3): clasificacion y datos faltantes; nunca el
   // puntaje ni los datos socioeconomicos. Se pasa ademas por la proyeccion de evaluacion (defensa en profundidad).
+  //
+  // P13: si la solicitud es limitrofe y ya tiene caso en el comite, el caso se pasa a la consulta para que
+  // el estudiante vea la decision (`otorgada`/`denegada`) y su comentario. El caso se lee en su propia
+  // unidad de trabajo de solo lectura (el repositorio SQLite lo exige) y solo de ahi salen la decision y el
+  // comentario: el puntaje del caso nunca llega a la vista.
   function vistaParaEstudiante(usuario, fila) {
     const camposFaltantes = JSON.parse(fila.campos_faltantes);
+    const caso =
+      fila.clasificacion === CLASIFICACIONES.LIMITROFE
+        ? crearUnidadDeTrabajo().correr(() => revisionComite.obtenerCaso(fila.id))
+        : undefined;
     const estado = consultarEstadoEvaluacion({
       idEstudiante: fila.estudiante_id,
-      evaluacion: { idEstudiante: fila.estudiante_id, resultado: { clasificacion: fila.clasificacion, camposFaltantes } },
+      evaluacion: {
+        idEstudiante: fila.estudiante_id,
+        resultado: { clasificacion: fila.clasificacion, camposFaltantes },
+        ...(caso ? { caso } : {}),
+      },
     });
     return politicas.proyectarEvaluacion(usuario, {
       id: fila.id,
       periodoAcademico: fila.periodo_academico,
       clasificacion: estado.clasificacion,
       camposFaltantes: estado.datosFaltantes.map((d) => d.campo),
+      datosFaltantes: estado.datosFaltantes,
       becaOtorgada: buscarPremio.get(fila.id) !== undefined,
+      ...(estado.decisionComite === undefined
+        ? {}
+        : { decisionComite: estado.decisionComite, comentarioComite: estado.comentarioComite }),
     });
   }
 
@@ -317,6 +337,14 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas, asignac
           registrarEscalamiento({ id: fila.id, periodoAcademico: fila.periodo_academico, evaluacion, escalado });
         },
       ).then((plan) => vistaParaEstudiante(usuario, buscarPorId.get(plan.fila.id)));
+    },
+
+    // Solicitudes de beca del propio estudiante (la mas reciente primero), con la vista del estudiante.
+    async listarMisSolicitudesBeca(usuario) {
+      exigirEstudiante(usuario);
+      return listarPorEstudiante
+        .all(idCanonicoEstudiante(usuario))
+        .map((fila) => vistaParaEstudiante(usuario, fila));
     },
 
     // Ajena e inexistente dan el mismo 404 (regla P5: denegar == no encontrado).

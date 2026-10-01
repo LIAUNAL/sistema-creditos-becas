@@ -13,7 +13,11 @@ const OCHO_HORAS_MS = 8 * 60 * 60 * 1000;
 const QUINCE_MINUTOS_MS = 15 * 60 * 1000;
 
 // Pagina de aterrizaje tras el login por formulario; los demas roles van a /solicitudes.
-const PAGINAS_INICIALES = Object.freeze({ asesor_financiero: '/asesor/cola', comite_becas: '/comite' });
+const PAGINAS_INICIALES = Object.freeze({
+  asesor_financiero: '/asesor/cola',
+  comite_becas: '/comite',
+  direccion_academica: '/direccion',
+});
 
 const sha256 =(texto) => crypto.createHash('sha256').update(texto).digest('hex');
 
