@@ -28,7 +28,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 - [x] T8 (P8) Student credit flow (1.1, 1.2)
 - [x] T9 (P9) Advisor flow (1.3)
 - [x] T10 (P10) Loan terms + calendar generation (3.1) (size:exception candidate)
-- [ ] T11 (P11) Scholarship part 1 (2.1): applications, eligibility run, `scholarship_awards`
+- [x] T11 (P11) Scholarship part 1 (2.1): applications, eligibility run, `scholarship_awards`
 - [ ] T12 (P12) Scholarship part 2 (2.2): committee queue, member id in audit_log
 - [ ] T13 (P13) Scholarship UI + student status page (2.3)
 - [ ] T14 (P14) Disbursement execution (3.2)
@@ -111,5 +111,10 @@ Native review assessed per work-unit commit; the user's consent per candidate is
   - Check order on approve: role -> 404 (missing/draft) -> 403 (not assigned) -> 409 (not pendiente_revision) -> terms validation. One existing assertion changed in `flujoAsesor.test.js` (it asserted there was NO approve form "until the next slice"; now asserts the form exists).
   - Size ~1,550 lines (mostly tests and the contract suite) -> `size:exception` (plan forecast ~420).
 
+- T10 commit d3fc4d6.
+- T11 (delegated writer, branch `feat/e5s11-becas-elegibilidad`): RED observed (`../app/configuracionElegibilidad` missing, `puedeVerSolicitudBeca is not a function`), GREEN 405/405 on two consecutive full runs (371 + 34 new); `openspec validate e5s11 --strict` valid. Parent independent real run (curl, JSON API with CSRF header from `GET /csrf`): eligible (4.8, estrato 1, 500000) -> 201 `elegible` + `becaOtorgada: true` (score 95.92 stored); missing promedio -> 201 `datos_incompletos`, `camposFaltantes: ["promedioAcumulado"]`; (1.2, estrato 6, 8000000) -> 201 `no_elegible` (score 12); duplicate period -> 409 `SOLICITUD_BECA_EXISTENTE` with the existing id; promedio 99 -> 400; POST without CSRF -> 403; SQLite: `scholarship_awards` has exactly one row (2026-1, `automatica`); audit `presentar_solicitud_beca/estudiante x3` + `otorgar_beca_automatica/sistema x1`; owner GET 200 with NO score or socioeconomic fields; advisor GET 403; unknown id 404; SIGTERM exit 0.
+  - Decisions: migration 007 (`scholarship_applications` UNIQUE(estudiante_id, periodo_academico), `scholarship_awards` UNIQUE(application_id), `configuracion_elegibilidad` per period); `DEFAULT_CONFIGURACION` (ASSUMPTION to confirm with the business): weights promedio 0.5 / estrato 0.25 / ingresos 0.25, scales promedio max 5, estrato max 6, income reference 6,000,000 COP, thresholds `elegible` >= 70, `limitrofe` >= 50; stored per-period config overrides the default and is always validated through `calcularElegibilidad` (invalid/unreadable -> HTTP 500, nothing written); application + award + audit in ONE transaction; `limitrofe` is stored with no award and NO committee call (hand-off to P12); the student never receives `puntaje` (response `{id, periodoAcademico, clasificacion, camposFaltantes, becaOtorgada}`; the `limitrofe` label shows as "limitrofe en revisión" slightly ahead of P12); extra route `POST /api/becas/solicitudes/:id/completar` (re-evaluation only while `datos_incompletos`, else 409 `SOLICITUD_BECA_DECIDIDA`, guarded by `WHERE clasificacion='datos_incompletos'`); policy `puedeVerSolicitudBeca` = owner only.
+  - Size ~700 lines (tests half) -> over the ~350 forecast.
+
 ## Next step
-T11 (P11, change `e5s11-...`) scholarship backend part 1 (2.1): applications, eligibility run, `scholarship_awards` for automatic `elegible`, via delegated writer on a new branch stacked on `feat/e5s10-condiciones-calendario`.
+T12 (P12, change `e5s12-...`) scholarship part 2 (2.2): committee queue + persistence port for committee cases + member id in audit_log + `otorgada` into `scholarship_awards` (origen `comite`) via delegated writer on a new branch stacked on `feat/e5s11-becas-elegibilidad`.

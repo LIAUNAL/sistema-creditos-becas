@@ -75,12 +75,17 @@ function crearPoliticas({ asignaciones }) {
   // Lectura aparte del caso: el estudiante solo consulta el estado de su propia evaluacion.
   const puedeVerEstadoEvaluacion = (usuario, evaluacion) => esEstudianteDe(usuario, evaluacion);
 
-  const puedeVerReportes = (usuario) => usuario?.rol === 'direccion_academica';
+  // Story 5.11: la solicitud de beca (con su puntaje y datos socioeconomicos) es solo de su propietario.
+  // Los roles que la revisan (comite, P12) se agregan cuando existan sus pantallas.
+  const puedeVerSolicitudBeca = (usuario, solicitudBeca) => esEstudianteDe(usuario, solicitudBeca);
+
+  const puedeVerReportes =(usuario) => usuario?.rol === 'direccion_academica';
 
   return {
     puedeVerSolicitud,
     puedeVerCasoComite,
     puedeVerEstadoEvaluacion,
+    puedeVerSolicitudBeca,
     puedeVerReportes,
     proyectarSolicitud: proyectarPara(VEN_SOCIOECONOMICOS_EN_SOLICITUD),
     proyectarEvaluacion: proyectarPara(VEN_SOCIOECONOMICOS_EN_EVALUACION),

@@ -249,3 +249,13 @@ test('NFR-003: se ocultan tambien las variantes en snake_case', () => {
   });
   assert.deepStrictEqual(proyectada, { id: 1 });
 });
+
+test('Story 5.11: solo el estudiante propietario puede ver una solicitud de beca', () => {
+  const { usuarios, politicas } = preparar();
+  const solicitud = { id: 'b1', estudianteId: String(usuarios.estudiante.id) };
+  assert.strictEqual(politicas.puedeVerSolicitudBeca(usuarios.estudiante, solicitud), true);
+  for (const otro of [usuarios.otroEstudiante, usuarios.asesor, usuarios.comite, usuarios.direccion, null]) {
+    assert.strictEqual(politicas.puedeVerSolicitudBeca(otro, solicitud), false);
+  }
+  assert.strictEqual(politicas.puedeVerSolicitudBeca(usuarios.estudiante, undefined), false);
+});

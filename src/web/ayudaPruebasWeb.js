@@ -62,11 +62,14 @@ async function crearUsuario(db, nombreUsuario, rol, contrasena) {
 function crearCliente(base) {
   let cookie = null;
 
-  async function pedir(metodo, ruta, campos, cabecerasExtra = {}) {
+  async function pedir(metodo, ruta, campos, cabecerasExtra = {}, { json = false } = {}) {
     const cabeceras = { ...cabecerasExtra };
     if (cookie) cabeceras.Cookie = cookie;
     let cuerpo;
-    if (campos !== undefined) {
+    if (json) {
+      cabeceras['Content-Type'] = 'application/json';
+      cuerpo = JSON.stringify(campos ?? {});
+    } else if (campos !== undefined) {
       cabeceras['Content-Type'] = 'application/x-www-form-urlencoded';
       cuerpo = new URLSearchParams(campos).toString();
     }
@@ -91,6 +94,9 @@ function crearCliente(base) {
     // Por defecto agrega el token CSRF de la sesion, como lo hace el campo oculto de los formularios.
     post: async (ruta, campos = {}, { conToken = true } = {}) =>
       pedir('POST', ruta, conToken ? { ...campos, _csrf: await token() } : campos),
+    // Cuerpo JSON; el token CSRF viaja en la cabecera `x-csrf-token`, como un cliente de API.
+    postJson: async (ruta, cuerpo = {}, { conToken = true } = {}) =>
+      pedir('POST', ruta, cuerpo, conToken ? { 'x-csrf-token': await token() } : {}, { json: true }),
     iniciarSesion: (nombreUsuario, contrasena) =>
       pedir('POST', '/login', { nombre_usuario: nombreUsuario, contrasena }),
     pedir,
