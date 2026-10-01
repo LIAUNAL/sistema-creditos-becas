@@ -24,7 +24,7 @@ Implement four OpenSpec changes via `/sw:build`, one at a time, each with a test
 ## Tasks
 - [x] T1 e2s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2) — commit eab985a
 - [x] T2 e3s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
-- [ ] T3 e4s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
+- [x] T3 e4s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
 - [ ] T4 e1s2 — implement + tests (spec tasks 1.1-1.3, 2.1-2.3)
 - [ ] T5 validate: `npx @fission-ai/openspec validate --all --strict`
 - [ ] T6 close each story: `npx un-specweaver close <change-id>`
@@ -39,6 +39,9 @@ Implement four OpenSpec changes via `/sw:build`, one at a time, each with a test
 - T2 (delegated writer): RED observed (`Cannot find module './calendarioDesembolso'`), GREEN 34/34 via `npm test`; `openspec validate e3s1 --strict` valid.
   - Assumptions to confirm (spec silent): first installment date is an input (`fechaPrimeraCuota`), monthly with month-end clamp; amounts split in cents, remainder on last installment; error "registry" = in-memory `errores` list + thrown `ErrorGeneracionCalendario`; also rejects non-`aprobada` state, invalid `numeroCuotas`/date; idempotent per `solicitud.id` (from story technical note); in-memory Map storage, `randomUUID()` ids.
   - Writer used `sed -i` for checkboxes (project rule says sd); harmless.
+
+- T3 (delegated writer): RED observed (`Cannot find module './reporteConsolidado'`), GREEN 38/38 via `npm test`; `openspec validate e4s1 --strict` valid.
+  - Assumptions to confirm (spec silent): input shapes `solicitudes {id, periodoAcademico, estado}`, `becas {periodoAcademico, estado}`, `desembolsos {solicitudId, monto, estado}`; credits = `aprobada`, becas = `otorgada` (counts); disbursed amount sums only state `desembolsado`, which no story emits yet (3.1 only emits `programado`), so the total will read 0 until a disbursement story defines it; desembolso period comes from its solicitud; centavo-exact sums; no input validation; unknown period/empty arrays give zeros.
 
 ## Delivery
 - Strategy: `stacked-to-main` (chosen by user). One PR per change, stacked in order.
