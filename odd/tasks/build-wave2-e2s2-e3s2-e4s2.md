@@ -26,8 +26,8 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 ## Tasks
 - [x] T1 e2s2 — slice S5 `feat/e2s2-revision-casos-limitrofes` (spec 1.1-1.3, 2.1-2.3)
 - [x] T2 e3s2 — slice S6 (spec 1.1-1.2, 2.1-2.2)
-- [ ] T3 e4s2 — slice S7 (spec 1.1-1.2, 2.1-2.2)
-- [ ] T4 close wave 2: `npx un-specweaver close --done` (after validate)
+- [x] T3 e4s2 — slice S7 (spec 1.1-1.2, 2.1-2.2)
+- [x] T4 close wave 2: `npx un-specweaver close --done` — 3 archived, 0 failures. `validate --all --strict`: 6/10 pass; the 4 main specs (`solicitud-de-credito`, `desembolso-y-seguimiento`, `evaluacion-de-elegibilidad-para-becas`, `reportes-para-direccion-academica`) each fail only on the `[WARNING] Purpose section is still a placeholder` created by `archive`. Fix = write a real `## Purpose` in each `openspec/specs/*/spec.md` (product wording, pending).
 - [ ] T5 e1s3 — slice S8 (wave 3)
 - [ ] T6 e2s3 — slice S9 (wave 3)
 - [ ] T7 e3s3 — slice S10 (wave 3)
@@ -49,5 +49,9 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
   - Assumptions to confirm (spec silent): execution date from injected `reloj` (ISO date, `fechaEjecucion`); caller triggers `ejecutar`; only `programado` can be executed (else `ErrorEjecucionDesembolso('DESEMBOLSO_NO_PROGRAMADO')`, no notification); notifier port `notificarDesembolso({solicitudId, desembolsoId, numeroCuota, fecha, monto})`; view `consultarHistorial` returns all passed disbursements with `fechaEjecucion` null while programmed; state set to `ejecutado` before notifying and NOT rolled back if the notifier throws.
   - CONFIRMED GAP (user decision needed): `src/reportes/reporteConsolidado.js` sums only `desembolsado`, e3s2 emits `ejecutado` -> executed disbursements are missing from report totals. Not touched.
 
+- T3 e4s2 (delegated writer): RED observed (`Cannot find module './alertaTasaMora'`), GREEN 67/67 via `npm test`; `openspec validate e4s2 --strict` valid. New files in `src/reportes/` only.
+  - Assumptions to confirm (spec silent): rate = `vencido` / (`programado`+`ejecutado`+`vencido`) per period (from epics.md 4.2 technical note); alert only when rate strictly > threshold; zero denominator -> rate 0, no alert; threshold is a fraction 0..1, non-numeric throws `TypeError`; alert shape `{periodoAcademico, tasaMora, umbral}` or `null`; disbursement carries `periodoAcademico` directly; no delivery port.
+  - Third state name in play: 4.1 sums `desembolsado`, 3.2 emits `ejecutado`, 4.2 uses `ejecutado`/`vencido`. Only 4.1 is inconsistent (already flagged).
+
 ## Next step
-T3 e4s2 writer on a new branch stacked on S6.
+Close wave 2, then wave 3 (e1s3, e2s3, e3s3) on stacked branches.
