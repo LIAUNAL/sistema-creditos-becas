@@ -31,7 +31,7 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 - [x] T5 e1s3 — slice S8 (wave 3)
 - [x] T6 e2s3 — slice S9 (wave 3)
 - [x] T7 e3s3 — slice S10 (wave 3)
-- [ ] T8 `npx @fission-ai/openspec validate --all --strict` + close wave 3: `npx un-specweaver close --done`
+- [x] T8 close wave 3: `npx un-specweaver close --done` — 3 archived, 0 failures; `openspec/changes/` has no open changes left (all 11 stories done). `validate --all --strict`: 0/4 main specs pass, all only on the `Purpose` placeholder warning (see T4).
 
 ## Known cross-change risk
 - e3s2 introduces disbursement state `ejecutado`; e4s1 (archived) sums only state `desembolsado`, so the report total would stay 0. Do NOT edit e4s1 here; report it as a gap for the user (needs /sw:change or /sw:bug).
