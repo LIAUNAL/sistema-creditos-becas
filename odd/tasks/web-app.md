@@ -20,7 +20,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 - [x] T0 (P0) Scope and docs: `bmad-correct-course` -> sprint change proposal, PRD + epics.md Epic 5, fill `docs/architecture-base.md`; bridge generated 18 changes `e5s1`..`e5s18` (capability `aplicacion-web`)
 - [x] T1 (P1) HTTP server + router, error mapping, `/health`, `npm start`, `engines`, server teardown rule
 - [x] T2 (P2) DB: sqlite connection, migrations runner, clock, `audit_log`
-- [ ] T3 (P3) Identity: seeded users, async scrypt, sessions, login/logout, session rotation, login throttling
+- [x] T3 (P3) Identity: seeded users, async scrypt, sessions, login/logout, session rotation, login throttling
 - [ ] T4 (P4) Web security baseline: escaping, CSRF, cookie flags, body size limit, request timeout
 - [ ] T5 (P5) Visibility and ownership: assignments, default rule for Q5, policy functions, NFR-003 tests
 - [ ] T6 (P6) Collecting notifier + outbox + transaction helper (C2 design), two atomicity tests
@@ -62,5 +62,10 @@ Native review assessed per work-unit commit; the user's consent per candidate is
 - T2 (delegated writer, branch `feat/e5s2-base-de-datos`): RED observed (`Cannot find module './baseDeDatos'`), GREEN 127/127 via `npm test` (112 + 15 new); `openspec validate e5s2 --strict` valid. Parent verified: migrations apply `[1]` then `[]` (idempotent); DELETE and UPDATE on `audit_log` blocked by SQLite triggers (append-only). `node:sqlite` loads unflagged on v26.8.1 without warning; `engines` raised to `>=22.13` (unverified from docs, conservative); `data/` added to .gitignore.
   - Decisions: migrations live in `src/infra/versiones/` (a `./migraciones` dir would clash with `migraciones.js`); each migration in its own BEGIN/COMMIT with ROLLBACK; `abrirBaseDeDatos({ruta, entorno})` path order ruta > DB_PATH > `data/app.db`, foreign_keys always, WAL only for files; `aplicada_en` uses the real clock, not the injected one.
 
+- T2 commit 1ec9310. RDD is off for this clone, so no review assessment from T2 on.
+- T3 (delegated writer, branch `feat/e5s3-identidad`): RED observed (3 failures: `Cannot find module './contrasenas'` / `'./sembrado'`), GREEN 148/148 via `npm test` (127 + 21 new); `openspec validate e5s3 --strict` valid. Parent real run on a temp DB: login 200 with `HttpOnly; SameSite=Lax` cookie, `/me` 200 with cookie and 401 without, two logins give different session ids (rotation), 6th failed attempt -> 429 and the lockout also blocks the correct password, no plaintext password in the DB file, SIGTERM exit 0.
+  - Decisions: migration 002 (`usuarios` with CHECK on the 4 roles, `sesiones.id` = SHA-256 of the token); async scrypt + `timingSafeEqual`; seed has no default passwords (`SEED_PASSWORD_*` or random printed once); guards `requerirSesion` / `requerirRol(...)` wrap router handlers; errors carry `.codigo` + `.estadoHttp` so P1 `mapearError` maps 401/403/429/413/400; throttling per `usuario|IP`, in-memory, sliding window, checked BEFORE verifying the password; unknown user verified against a cached dummy hash; audit `login_exitoso` / `login_fallido` / `logout`.
+  - Hand-off to P4 (security baseline): replace the 16 KiB body reader local to `autenticacion.js` with the shared one; cap/sanitise the attacker-controlled username stored by `login_fallido`; harden cookie flags (Secure when applicable); CSRF; escaping; request timeout.
+
 ## Next step
-T3 (P3, change `e5s3-...`) via delegated writer on a new branch stacked on `feat/e5s2-base-de-datos`.
+T4 (P4, change `e5s4-...`) via delegated writer on a new branch stacked on `feat/e5s3-identidad`.

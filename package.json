@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node src/web/main.js",
+    "seed": "node src/infra/sembrado.js",
     "test": "node --test src/"
   }
 }
