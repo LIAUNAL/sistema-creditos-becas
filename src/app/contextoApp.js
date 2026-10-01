@@ -24,6 +24,7 @@ const { crearServicioDesembolsos } = require('./servicioDesembolsos');
 const { crearServicioBecas } = require('./servicioBecas');
 const { crearServicioComite } = require('./servicioComite');
 const { crearServicioVencimientos } = require('./servicioVencimientos');
+const { crearServicioAvisos } = require('./servicioAvisos');
 
 /**
  * Construye UNA sola vez las piezas de larga vida de la aplicacion: colector de notificaciones,
@@ -95,6 +96,7 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
   const servicioBecas = crearServicioBecas(piezas);
   const servicioComite = crearServicioComite(piezas);
   const servicioVencimientos = crearServicioVencimientos({ ...piezas, opciones: vencimientos });
+  const servicioAvisos = crearServicioAvisos(piezas);
   return {
     colector,
     repositorios,
@@ -114,6 +116,7 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     servicioBecas,
     servicioComite,
     servicioVencimientos,
+    servicioAvisos,
   };
 }
 

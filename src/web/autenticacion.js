@@ -51,6 +51,7 @@ function crearAutenticacion({
   ventanaMs = QUINCE_MINUTOS_MS,
   csrf = crearCsrf(),
   cookies = crearPoliticaCookies(),
+  contarAvisos,
 }) {
   const buscarUsuario = db.prepare('SELECT * FROM usuarios WHERE nombre_usuario = ?');
   const insertarSesion = db.prepare(
@@ -93,7 +94,20 @@ function crearAutenticacion({
     return { id, usuario: { id: fila.id, nombre_usuario: fila.nombre_usuario, rol: fila.rol } };
   }
 
-  const obtenerUsuario = (req) => sesionDeSolicitud(req)?.usuario ?? null;
+  // Story 5.16: si se inyecta `contarAvisos(usuario)`, el usuario expone `avisosNoLeidos` para la navegacion.
+  // Es una propiedad NO enumerable y perezosa: solo se consulta cuando una vista la lee (una vez por peticion)
+  // y no aparece en `/me`, en JSON ni en comparaciones del usuario.
+  function conAvisos(usuario) {
+    if (!usuario || !contarAvisos) return usuario;
+    let total;
+    Object.defineProperty(usuario, 'avisosNoLeidos', {
+      enumerable: false,
+      get: () => (total ??= contarAvisos(usuario)),
+    });
+    return usuario;
+  }
+
+  const obtenerUsuario = (req) => conAvisos(sesionDeSolicitud(req)?.usuario) ?? null;
 
   function crearSesion(usuarioId) {
     const token = crypto.randomBytes(32).toString('hex');

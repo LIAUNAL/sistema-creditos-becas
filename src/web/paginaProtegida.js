@@ -12,11 +12,13 @@ const { vistaError } = require('./vistas');
  *   - 5xx -> se propaga al mapeo comun del servidor, que no filtra detalles.
  */
 function crearEnvoltorioPagina({ autenticacion, csrf, rol }) {
-  const { requerirRol, obtenerUsuario, obtenerIdSesion } = autenticacion;
+  const { requerirRol, requerirSesion, obtenerUsuario, obtenerIdSesion } = autenticacion;
   const tokenDe = (req) => csrf.generar(obtenerIdSesion(req));
+  // Sin `rol` la pagina es de cualquier usuario con sesion (p. ej. la bandeja de avisos, Story 5.16).
+  const proteger = rol === undefined ? requerirSesion : requerirRol(rol);
 
   return function pagina(manejador) {
-    const protegido = requerirRol(rol)((contexto) => manejador({ ...contexto, csrf: tokenDe(contexto.req) }));
+    const protegido = proteger((contexto) => manejador({ ...contexto, csrf: tokenDe(contexto.req) }));
     return async (contexto) => {
       try {
         return await protegido(contexto);
