@@ -27,7 +27,7 @@ Implement four OpenSpec changes via `/sw:build`, one at a time, each with a test
 - [x] T3 e4s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
 - [x] T4 e1s2 — implement + tests (spec tasks 1.1-1.3, 2.1-2.3)
 - [~] T5 validate: `npx @fission-ai/openspec validate --all --strict` — 10/11 pass; only `spec/solicitud-de-credito` fails (pre-existing placeholder Purpose warning in the main spec from Story 1.1, outside this scope)
-- [ ] T6 close each story: `npx un-specweaver close <change-id>`
+- [x] T6 close each story: `npx un-specweaver close --done` — 4 archived, 0 failures (deltas merged into `openspec/specs/`)
 
 ## Acceptance
 - `npm test` green; openspec validate strict passes; tasks.md checkboxes match reality.
@@ -51,5 +51,8 @@ Implement four OpenSpec changes via `/sw:build`, one at a time, each with a test
 - Slices / branches: S1 `feat/e2s1-puntaje-elegibilidad` (e2s1, ~372 changed lines, medium, under budget); S2 `feat/e3s1-calendario-desembolso` (on top of S1); S3 e4s1; S4 e1s2.
 - Review assessment: T1 medium / under_budget (assessed with `--untracked-scope=exclude`; untracked files are init/graphify artifacts, not part of the candidate).
 
+- T4 commit e656e61 (356 lines, medium, under budget); close commit on S4 branch `feat/e1s2-validacion-documentos`. Per-slice commits: S1 eab985a/6b0e6c0, S2 eed8614, S3 19322e8, S4 e656e61 + close.
+- Native review: not due for any slice (all medium/under_budget); the 4 slices are stacked, none pushed.
+
 ## Next step
-T3 (e4s1) via delegated writer on a new branch stacked on S2.
+User decisions: push + open stacked PRs (S1 -> S2 -> S3 -> S4); confirm the writers' spec assumptions with product; fix the placeholder Purpose in `openspec/specs/solicitud-de-credito/spec.md` (the only `validate --all --strict` failure).
