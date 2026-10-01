@@ -1,7 +1,7 @@
 # evaluacion-de-elegibilidad-para-becas Specification
 
 ## Purpose
-TBD - created by archiving change e2s1-calculo-de-puntaje-de-elegibilidad-de-beca. Update Purpose after archive.
+Calcular un puntaje objetivo de elegibilidad de beca a partir de criterios socioeconómicos y académicos, escalar al comité los casos que el sistema no puede autodecidir, y permitir que el estudiante consulte el estado de su evaluación.
 
 ## Requirements
 

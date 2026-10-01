@@ -1,7 +1,7 @@
 # reportes-para-direccion-academica Specification
 
 ## Purpose
-TBD - created by archiving change e4s1-reporte-consolidado-de-creditos-y-becas-por-peri. Update Purpose after archive.
+Exponer un reporte consolidado de créditos y becas otorgados por periodo académico, y alertar cuando la tasa de mora o vencimiento cruza el umbral definido.
 
 ## Requirements
 
