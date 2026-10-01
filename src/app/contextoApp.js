@@ -12,6 +12,7 @@ const { DecisionAsesorFinanciero } = require('../solicitud-credito/decisionAseso
 // Las politicas de visibilidad (P5) viven en la capa web; son funciones puras sobre asignaciones.
 const { crearPoliticas } = require('../web/politicas');
 const { crearServicioSolicitudes } = require('./servicioSolicitudes');
+const { crearServicioAsesor, crearServicioDireccion } = require('./servicioAsesor');
 
 /**
  * Construye UNA sola vez las piezas de larga vida de la aplicacion: colector de notificaciones,
@@ -44,7 +45,21 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     repositorios,
     politicas,
   });
-  return { colector, repositorios, registro, envio, decision, asignaciones, politicas, servicioSolicitudes };
+  const piezas = { db, reloj, auditoria, colector, registro, envio, decision, repositorios, asignaciones, politicas };
+  const servicioAsesor = crearServicioAsesor(piezas);
+  const servicioDireccion = crearServicioDireccion(piezas);
+  return {
+    colector,
+    repositorios,
+    registro,
+    envio,
+    decision,
+    asignaciones,
+    politicas,
+    servicioSolicitudes,
+    servicioAsesor,
+    servicioDireccion,
+  };
 }
 
 module.exports = { crearContextoApp };

@@ -136,12 +136,18 @@ test('un rol no permitido en la ruta sigue siendo 403 (guardia de rol de P3)', a
   assert.deepStrictEqual(cuerpo, { codigo: 'ROL_NO_PERMITIDO' });
 });
 
-test('sin guardia de rol, direccion y comite reciben 404 y nunca el recurso', async () => {
-  for (const rol of ['direccion_academica', 'comite_becas']) {
-    const { estado, cuerpo } = await pedir('/prueba/abierta/propia', await sesion(rol));
-    assert.strictEqual(estado, 404, rol);
-    assert.ok(!JSON.stringify(cuerpo).includes('ingresosHogar'), rol);
-  }
+// Story 5.9: direccion_academica puede abrir una solicitud, pero solo proyectada (sin campos
+// socioeconomicos); el comite sigue recibiendo 404 y nunca el recurso.
+test('sin guardia de rol, direccion recibe la solicitud proyectada y el comite 404', async () => {
+  const direccion = await pedir('/prueba/abierta/propia', await sesion('direccion_academica'));
+  assert.strictEqual(direccion.estado, 200);
+  assert.strictEqual(direccion.cuerpo.recurso.id, 'propia');
+  assert.ok(!JSON.stringify(direccion.cuerpo).includes('ingresosHogar'));
+  assert.ok(!JSON.stringify(direccion.cuerpo).includes('estrato'));
+
+  const comite = await pedir('/prueba/abierta/propia', await sesion('comite_becas'));
+  assert.strictEqual(comite.estado, 404);
+  assert.ok(!JSON.stringify(comite.cuerpo).includes('ingresosHogar'));
 });
 
 test('el manejador recibe el recurso proyectado por la politica', async () => {

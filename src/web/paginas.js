@@ -32,7 +32,10 @@ async function leerCampos(leerCuerpo) {
   return campos;
 }
 
-const elementosDe = (errores) => Object.entries(errores).map(([campo, mensaje]) => ({ campo, mensaje }));
+// Pagina de aterrizaje tras iniciar sesion: el asesor va a su cola; el resto, como hasta ahora.
+const paginaInicial = (rol) => (rol === 'asesor_financiero' ? '/asesor/cola' : '/solicitudes');
+
+const elementosDe =(errores) => Object.entries(errores).map(([campo, mensaje]) => ({ campo, mensaje }));
 
 /**
  * Paginas HTML del flujo del estudiante (Story 5.8). Todas las rutas del estudiante pasan por
@@ -169,15 +172,19 @@ function crearRutasPaginas({ servicio, autenticacion, csrf }) {
     [
       'GET',
       '/',
-      async ({ req, res }) =>
-        redirigir(res, (await obtenerUsuario(req)) ? '/solicitudes' : '/login'),
+      async ({ req, res }) => {
+        const usuario = await obtenerUsuario(req);
+        return redirigir(res, usuario ? paginaInicial(usuario.rol) : '/login');
+      },
     ],
     [
       'GET',
       '/login',
       async ({ req, res, url }) => {
         const usuario = await obtenerUsuario(req);
-        if (usuario?.rol === 'estudiante') return redirigir(res, '/solicitudes');
+        if (usuario?.rol === 'estudiante' || usuario?.rol === 'asesor_financiero') {
+          return redirigir(res, paginaInicial(usuario.rol));
+        }
         return responderHtml(res, 200, vistaLogin({ codigoError: url.searchParams.get('error') ?? undefined }));
       },
     ],
