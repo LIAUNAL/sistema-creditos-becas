@@ -2,6 +2,7 @@
 
 const crypto = require('node:crypto');
 const { ejecutarCasoDeUso } = require('../infra/casoDeUso');
+const { crearUnidadDeTrabajo } = require('../infra/unidadDeTrabajo');
 const { calcularElegibilidad, CLASIFICACIONES } = require('../evaluacion-elegibilidad/calculoElegibilidad');
 const { consultarEstadoEvaluacion } = require('../evaluacion-elegibilidad/consultaEstadoEvaluacion');
 const { obtenerConfiguracion, DEFAULT_CONFIGURACION } = require('./configuracionElegibilidad');
@@ -13,8 +14,11 @@ const { ErrorRolNoPermitido } = require('./servicioAsesor');
 // Cada caso de uso corre en `ejecutarCasoDeUso` con `confirmarSiError: false`: la solicitud, la fila de
 // `scholarship_awards` (solo si el resultado es `elegible`) y las entradas de auditoria se escriben en
 // UNA transaccion sincrona (`persistir`) o no se escribe nada. El estudiante NO recibe notificacion en
-// esta slice. Una solicitud `limitrofe` se guarda sin premio y sin caso de comite: P12 conecta la cola
-// del comite leyendo las solicitudes con clasificacion `limitrofe`.
+// esta slice. Story 5.12 (P12): una solicitud `limitrofe` se guarda sin premio y, en la MISMA transaccion,
+// entra a la cola del comite (`revisionComite.procesarResultado`, con el id del caso igual al de la
+// solicitud), el colector deja el aviso al rol `comite_becas` en el outbox, el caso se asigna a todo
+// integrante activo del comite y la auditoria registra el escalamiento del sistema. El comite decide en
+// servicioComite.js. Cada caso de uso lleva su unidad de trabajo para volcar el caso del comite.
 
 const ESTRATOS = Object.freeze([1, 2, 3, 4, 5, 6]);
 const MAX_PERIODO = 20;
@@ -94,9 +98,17 @@ function validarPeriodo(valor) {
   return { periodo };
 }
 
-function crearServicioBecas({ db, reloj, colector, auditoria, politicas }) {
+function crearServicioBecas({ db, reloj, colector, auditoria, politicas, asignaciones, revisionComite }) {
   const caso = (operacion, persistir) =>
-    ejecutarCasoDeUso({ db, colector, reloj, confirmarSiError: false, operacion, persistir });
+    ejecutarCasoDeUso({
+      db,
+      colector,
+      reloj,
+      unidadDeTrabajo: crearUnidadDeTrabajo(),
+      confirmarSiError: false,
+      operacion,
+      persistir,
+    });
 
   const exigirEstudiante = (usuario) => {
     if (usuario?.rol !== 'estudiante') throw new ErrorRolNoPermitido('estudiante');
@@ -151,6 +163,36 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas }) {
     });
   }
 
+  // Escalamiento (FR-046): una solicitud `limitrofe` entra a la cola del comite. Corre en la OPERACION del
+  // caso de uso (dentro de la unidad de trabajo y del colector) y devuelve si el caso es nuevo: procesar
+  // otra vez el mismo caso no lo duplica ni vuelve a avisar (lo garantiza el modulo).
+  async function encolarSiLimitrofe({ id, estudianteId, periodoAcademico, evaluacion }) {
+    if (evaluacion.clasificacion !== CLASIFICACIONES.LIMITROFE) return false;
+    const yaEnComite = revisionComite.obtenerCaso(id) !== undefined;
+    await revisionComite.procesarResultado(
+      { id, estudiante: { estudianteId }, periodoAcademico },
+      {
+        clasificacion: evaluacion.clasificacion,
+        decisionAutomatica: evaluacion.decisionAutomatica === 1,
+        puntaje: evaluacion.puntaje,
+      },
+    );
+    return !yaEnComite;
+  }
+
+  // Asignacion (Q5 por defecto: todo integrante activo) y auditoria del escalamiento. Sincrono: corre en `persistir`.
+  function registrarEscalamiento({ id, periodoAcademico, evaluacion, escalado }) {
+    if (!escalado) return;
+    asignaciones.asignarComiteACaso({ casoId: id, actor: { nombre_usuario: ACTOR_SISTEMA, rol: ACTOR_SISTEMA } });
+    auditoria.registrar({
+      actor: ACTOR_SISTEMA,
+      rol: ACTOR_SISTEMA,
+      accion: 'escalar_a_comite',
+      objetivo: `caso_comite:${id}`,
+      detalle: { periodoAcademico, puntaje: evaluacion.puntaje },
+    });
+  }
+
   const auditar = (usuario, accion, id, detalle) =>
     auditoria.registrar({ actor: usuario.nombre_usuario, rol: usuario.rol, accion, objetivo: `solicitud_beca:${id}`, detalle });
 
@@ -160,7 +202,7 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas }) {
       const estudianteId = idCanonicoEstudiante(usuario);
 
       return caso(
-        () => {
+        async () => {
           const { periodo, error: errorPeriodo } = validarPeriodo(datos.periodoAcademico);
           const configuracion = periodo ? obtenerConfiguracion(db, periodo) : DEFAULT_CONFIGURACION;
           const { errores, valores } = validarCampos(datos, configuracion.escalas.promedioMaximo);
@@ -171,12 +213,14 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas }) {
           if (existente) throw new ErrorSolicitudBecaExistente(existente.id);
 
           const evaluacion = evaluar(configuracion, valores);
-          return { id: crypto.randomUUID(), estudianteId, periodoAcademico: periodo, valores, evaluacion };
+          const id = crypto.randomUUID();
+          const escalado = await encolarSiLimitrofe({ id, estudianteId, periodoAcademico: periodo, evaluacion });
+          return { id, estudianteId, periodoAcademico: periodo, valores, evaluacion, escalado };
         },
         ({ resultado: plan, error }) => {
           if (error) return;
           const ahora = reloj.ahora().toISOString();
-          const { id, estudianteId: dueno, periodoAcademico, valores, evaluacion } = plan;
+          const { id, estudianteId: dueno, periodoAcademico, valores, evaluacion, escalado } = plan;
           db.prepare(
             `INSERT INTO scholarship_applications
                (id, estudiante_id, periodo_academico, promedio_acumulado, estrato, ingresos_hogar,
@@ -198,6 +242,7 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas }) {
           );
           auditar(usuario, 'presentar_solicitud_beca', id, { periodoAcademico, clasificacion: evaluacion.clasificacion });
           registrarOtorgamiento({ id, estudianteId: dueno, periodoAcademico, evaluacion, ahora });
+          registrarEscalamiento({ id, periodoAcademico, evaluacion, escalado });
         },
       ).then((plan) => vistaParaEstudiante(usuario, buscarPorId.get(plan.id)));
     },
@@ -208,7 +253,7 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas }) {
       exigirEstudiante(usuario);
 
       return caso(
-        () => {
+        async () => {
           const fila = buscarPorId.get(String(solicitudId));
           if (!fila || !politicas.puedeVerSolicitudBeca(usuario, { id: fila.id, estudianteId: fila.estudiante_id })) {
             throw new ErrorSolicitudBecaNoEncontrada(solicitudId);
@@ -225,11 +270,18 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas }) {
             estrato: nuevos.estrato ?? fila.estrato ?? undefined,
             ingresosHogar: nuevos.ingresosHogar ?? fila.ingresos_hogar ?? undefined,
           };
-          return { fila, valores, evaluacion: evaluar(configuracion, valores) };
+          const evaluacion = evaluar(configuracion, valores);
+          const escalado = await encolarSiLimitrofe({
+            id: fila.id,
+            estudianteId: fila.estudiante_id,
+            periodoAcademico: fila.periodo_academico,
+            evaluacion,
+          });
+          return { fila, valores, evaluacion, escalado };
         },
         ({ resultado: plan, error }) => {
           if (error) return;
-          const { fila, valores, evaluacion } = plan;
+          const { fila, valores, evaluacion, escalado } = plan;
           const ahora = reloj.ahora().toISOString();
           // La condicion repite la regla de negocio: un premio o una decision previa nunca se pisan.
           const { changes } = db
@@ -262,6 +314,7 @@ function crearServicioBecas({ db, reloj, colector, auditoria, politicas }) {
             evaluacion,
             ahora,
           });
+          registrarEscalamiento({ id: fila.id, periodoAcademico: fila.periodo_academico, evaluacion, escalado });
         },
       ).then((plan) => vistaParaEstudiante(usuario, buscarPorId.get(plan.fila.id)));
     },

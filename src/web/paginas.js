@@ -32,8 +32,9 @@ async function leerCampos(leerCuerpo) {
   return campos;
 }
 
-// Pagina de aterrizaje tras iniciar sesion: el asesor va a su cola; el resto, como hasta ahora.
-const paginaInicial = (rol) => (rol === 'asesor_financiero' ? '/asesor/cola' : '/solicitudes');
+// Pagina de aterrizaje tras iniciar sesion: el asesor y el comite van a su cola; el resto, como hasta ahora.
+const PAGINAS_INICIALES = Object.freeze({ asesor_financiero: '/asesor/cola', comite_becas: '/comite' });
+const paginaInicial = (rol) => PAGINAS_INICIALES[rol] ?? '/solicitudes';
 
 const elementosDe =(errores) => Object.entries(errores).map(([campo, mensaje]) => ({ campo, mensaje }));
 
@@ -182,7 +183,7 @@ function crearRutasPaginas({ servicio, autenticacion, csrf }) {
       '/login',
       async ({ req, res, url }) => {
         const usuario = await obtenerUsuario(req);
-        if (usuario?.rol === 'estudiante' || usuario?.rol === 'asesor_financiero') {
+        if (usuario?.rol === 'estudiante' || usuario?.rol === 'asesor_financiero' || usuario?.rol === 'comite_becas') {
           return redirigir(res, paginaInicial(usuario.rol));
         }
         return responderHtml(res, 200, vistaLogin({ codigoError: url.searchParams.get('error') ?? undefined }));

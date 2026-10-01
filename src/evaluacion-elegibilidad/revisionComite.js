@@ -14,9 +14,13 @@
  *
  * Consume el resultado de `calcularElegibilidad` (Story 2.1). La notificación
  * es un puerto inyectado: `notificador.notificarCasoLimitrofe(notificacion)`.
+ *
+ * Story 5.12: la persistencia de los casos es otro puerto opcional (`repositorio`, ver
+ * repositorioCasosComiteEnMemoria.js). Por defecto es en memoria y el comportamiento no cambia.
  */
 
 const { CLASIFICACIONES } = require('./calculoElegibilidad');
+const { crearRepositorioCasosComiteEnMemoria } = require('./repositorioCasosComiteEnMemoria');
 
 const DECISIONES = Object.freeze({
   OTORGADA: 'otorgada',
@@ -58,13 +62,17 @@ function copiarCaso(registro) {
  * @param {object} dependencias
  * @param {{notificarCasoLimitrofe: function(object): (void|Promise<void>)}} dependencias.notificador
  * @param {function(): Date} [dependencias.reloj]
+ * @param {{guardarCaso: function, obtenerCaso: function, listarPorEstado: function}} [dependencias.repositorio]
+ *   Puerto de persistencia de los casos; por defecto, en memoria.
  */
-function crearRevisionComite({ notificador, reloj = () => new Date() } = {}) {
+function crearRevisionComite({
+  notificador,
+  reloj = () => new Date(),
+  repositorio = crearRepositorioCasosComiteEnMemoria(),
+} = {}) {
   if (!notificador || typeof notificador.notificarCasoLimitrofe !== 'function') {
     throw new TypeError('Se requiere un notificador con notificarCasoLimitrofe');
   }
-
-  const casos = new Map(); // idCaso -> registro (solo casos enviados al comité)
 
   /**
    * Aplica el resultado de `calcularElegibilidad` a un caso.
@@ -82,7 +90,7 @@ function crearRevisionComite({ notificador, reloj = () => new Date() } = {}) {
       };
     }
 
-    const existente = casos.get(caso.id);
+    const existente = repositorio.obtenerCaso(caso.id);
     if (existente) {
       return {
         idCaso: caso.id,
@@ -92,9 +100,11 @@ function crearRevisionComite({ notificador, reloj = () => new Date() } = {}) {
       };
     }
 
-    casos.set(caso.id, {
+    repositorio.guardarCaso({
       id: caso.id,
       estudiante: caso.estudiante,
+      // Opcional: el puente de la aplicacion informa el periodo de la solicitud para persistirlo.
+      ...(caso.periodoAcademico === undefined ? {} : { periodoAcademico: caso.periodoAcademico }),
       puntaje,
       estado: ESTADOS_CASO.EN_REVISION_COMITE,
       historial: [{ tipo: TIPOS_HISTORIAL.INGRESO_COLA, fecha: reloj(), puntaje }],
@@ -115,7 +125,7 @@ function crearRevisionComite({ notificador, reloj = () => new Date() } = {}) {
    * @throws {ErrorCasoNoEnCola|ErrorDecisionInvalida}
    */
   function registrarDecision(idCaso, { decision, comentario } = {}) {
-    const registro = casos.get(idCaso);
+    const registro = repositorio.obtenerCaso(idCaso);
     if (!registro || registro.estado !== ESTADOS_CASO.EN_REVISION_COMITE) {
       throw new ErrorCasoNoEnCola(idCaso);
     }
@@ -137,13 +147,11 @@ function crearRevisionComite({ notificador, reloj = () => new Date() } = {}) {
   }
 
   function listarCola() {
-    return [...casos.values()]
-      .filter((registro) => registro.estado === ESTADOS_CASO.EN_REVISION_COMITE)
-      .map(copiarCaso);
+    return repositorio.listarPorEstado(ESTADOS_CASO.EN_REVISION_COMITE).map(copiarCaso);
   }
 
   function obtenerCaso(idCaso) {
-    const registro = casos.get(idCaso);
+    const registro = repositorio.obtenerCaso(idCaso);
     return registro ? copiarCaso(registro) : undefined;
   }
 

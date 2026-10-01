@@ -7,6 +7,7 @@ const { crearCsrf } = require('./csrf');
 const { crearRutasPaginas } = require('./paginas');
 const { crearRutasAsesor } = require('./paginasAsesor');
 const { crearRutasBecas } = require('./paginasBecas');
+const { crearRutasComite } = require('./paginasComite');
 
 /**
  * Compone la aplicacion web: identidad (login/sesion/CSRF) + casos de uso + paginas.
@@ -25,8 +26,9 @@ function crearAplicacionWeb({ db, reloj, csrf = crearCsrf(), auditoria = crearAu
     csrf,
   });
   const rutasBecas = crearRutasBecas({ servicioBecas: contexto.servicioBecas, autenticacion });
+  const rutasComite = crearRutasComite({ servicioComite: contexto.servicioComite, autenticacion, csrf });
   return {
-    rutas: [...autenticacion.rutas, ...paginas, ...paginasAsesor, ...rutasBecas],
+    rutas: [...autenticacion.rutas, ...paginas, ...paginasAsesor, ...rutasBecas, ...rutasComite],
     opcionesServidor: autenticacion.opcionesServidor,
     autenticacion,
     contexto,

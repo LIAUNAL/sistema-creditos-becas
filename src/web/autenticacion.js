@@ -12,7 +12,10 @@ const LONGITUD_MAXIMA_ACTOR = 64;
 const OCHO_HORAS_MS = 8 * 60 * 60 * 1000;
 const QUINCE_MINUTOS_MS = 15 * 60 * 1000;
 
-const sha256 = (texto) => crypto.createHash('sha256').update(texto).digest('hex');
+// Pagina de aterrizaje tras el login por formulario; los demas roles van a /solicitudes.
+const PAGINAS_INICIALES = Object.freeze({ asesor_financiero: '/asesor/cola', comite_becas: '/comite' });
+
+const sha256 =(texto) => crypto.createHash('sha256').update(texto).digest('hex');
 
 function leerCookie(req, nombre) {
   for (const par of (req.headers.cookie ?? '').split(';')) {
@@ -173,7 +176,7 @@ function crearAutenticacion({
     });
     res.setHeader('Set-Cookie', cookieDeSesion(req, token, Math.floor(duracionSesionMs / 1000)));
     if (desdeFormulario) {
-      redirigir(res, usuario.rol === 'asesor_financiero' ? '/asesor/cola' : '/solicitudes');
+      redirigir(res, PAGINAS_INICIALES[usuario.rol] ?? '/solicitudes');
       return;
     }
     responderJson(res, 200, {
