@@ -130,7 +130,12 @@ test('no_elegible y limitrofe guardan la solicitud sin beca (el comite entra en 
   assert.strictEqual(filas[limitrofe.id].clasificacion, 'limitrofe');
   assert.strictEqual(filas[limitrofe.id].decision_automatica, 1);
   assert.strictEqual(premios(app.db).length, 0);
-  assert.strictEqual(app.db.prepare("SELECT COUNT(*) AS n FROM notifications").get().n, 0, 'no se notifica al estudiante');
+  // P12: la solicitud limitrofe avisa al comite (ver flujoComite.test.js); al estudiante no se le notifica.
+  assert.strictEqual(
+    app.db.prepare("SELECT COUNT(*) AS n FROM notifications WHERE destinatario_tipo = 'estudiante'").get().n,
+    0,
+    'no se notifica al estudiante',
+  );
 });
 
 test('umbrales de la configuracion real: justo en el umbral clasifica hacia arriba, un poco menos hacia abajo', async (t) => {

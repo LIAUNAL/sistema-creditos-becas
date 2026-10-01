@@ -42,6 +42,8 @@ async function levantarAplicacion() {
   const servidor = await iniciarServidor({ puerto: 0, rutas: aplicacion.rutas, ...aplicacion.opcionesServidor });
   return {
     db,
+    reloj,
+    contexto: aplicacion.contexto,
     base: `http://127.0.0.1:${servidor.puerto}`,
     cerrar: async () => {
       await servidor.cerrar();

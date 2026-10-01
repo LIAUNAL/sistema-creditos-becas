@@ -51,6 +51,7 @@ function navegacion(usuario, csrf) {
 ${usuario.rol === 'estudiante' ? html`<a href="/solicitudes">Mis solicitudes</a>
 <a href="/solicitudes/nueva">Nueva solicitud</a>` : ''}
 ${usuario.rol === 'asesor_financiero' ? html`<a href="/asesor/cola">Cola de revisión</a>` : ''}
+${usuario.rol === 'comite_becas' ? html`<a href="/comite">Cola del comité</a>` : ''}
 <form method="post" action="/logout" class="en-linea">
 ${campoCsrf(csrf)}
 <button type="submit" class="boton-secundario">Cerrar sesión (${usuario.nombre_usuario})</button>
@@ -302,7 +303,38 @@ function vistaError({ estado, usuario, csrf }) {
     csrf,
     contenido: html`<h1>${titulo}</h1><p>${mensaje}</p>
 ${usuario?.rol === 'estudiante' ? html`<p><a href="/solicitudes">Volver a mis solicitudes</a></p>` : ''}
-${usuario?.rol === 'asesor_financiero' ? html`<p><a href="/asesor/cola">Volver a la cola de revisión</a></p>` : ''}`,
+${usuario?.rol === 'asesor_financiero' ? html`<p><a href="/asesor/cola">Volver a la cola de revisión</a></p>` : ''}
+${usuario?.rol === 'comite_becas' ? html`<p><a href="/comite">Volver a la cola del comité</a></p>` : ''}`,
+  });
+}
+
+// ---------------------------------------------------------------- Comite de becas (Story 5.12)
+
+// Pagina minima: la cola del integrante. El detalle y la decision se consumen por la API JSON hasta P13.
+function vistaColaComite({ usuario, csrf, cola }) {
+  const contenido = cola.length === 0
+    ? html`<p>No hay casos pendientes de revisión.</p>`
+    : html`<table>
+<caption>Casos limítrofes pendientes de revisión</caption>
+<thead>
+<tr><th scope="col">Periodo</th><th scope="col">Ingresó</th><th scope="col">Puntaje</th><th scope="col">Acción</th></tr>
+</thead>
+<tbody>
+${cola.map((c) => html`<tr>
+<td>${c.periodoAcademico}</td>
+<td><time datetime="${c.ingresadoEn}">${c.ingresadoEn.slice(0, 10)}</time></td>
+<td>${c.puntaje}</td>
+<td><a href="/api/comite/casos/${c.id}">Ver caso ${c.periodoAcademico}</a></td>
+</tr>`)}
+</tbody>
+</table>`;
+  return pagina({
+    titulo: 'Cola del comité',
+    usuario,
+    csrf,
+    contenido: html`<h1>Cola del comité de becas</h1>
+<p>Casos limítrofes asignados a usted que esperan una decisión.</p>
+${contenido}`,
   });
 }
 
@@ -461,6 +493,7 @@ module.exports = {
   vistaDetalle,
   vistaError,
   vistaCola,
+  vistaColaComite,
   vistaDetalleAsesor,
   vistaResumenDireccion,
   etiquetaDocumento,
