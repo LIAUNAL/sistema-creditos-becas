@@ -29,7 +29,7 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 - [x] T3 e4s2 — slice S7 (spec 1.1-1.2, 2.1-2.2)
 - [x] T4 close wave 2: `npx un-specweaver close --done` — 3 archived, 0 failures. `validate --all --strict`: 6/10 pass; the 4 main specs (`solicitud-de-credito`, `desembolso-y-seguimiento`, `evaluacion-de-elegibilidad-para-becas`, `reportes-para-direccion-academica`) each fail only on the `[WARNING] Purpose section is still a placeholder` created by `archive`. Fix = write a real `## Purpose` in each `openspec/specs/*/spec.md` (product wording, pending).
 - [x] T5 e1s3 — slice S8 (wave 3)
-- [ ] T6 e2s3 — slice S9 (wave 3)
+- [x] T6 e2s3 — slice S9 (wave 3)
 - [ ] T7 e3s3 — slice S10 (wave 3)
 - [ ] T8 `npx @fission-ai/openspec validate --all --strict` + close wave 3: `npx un-specweaver close --done`
 
@@ -57,5 +57,11 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 - T5 e1s3 (delegated writer): RED observed (`Cannot find module './decisionAsesor'`), GREEN 73/73 via `npm test`; `openspec validate e1s3 --strict` valid. New files in `src/solicitud-credito/`; no existing source edited.
   - Assumptions to confirm (spec silent): rejected state `rechazada`; only `pendiente_revision` can be decided (else `ErrorSolicitudNoEnRevision`); decision date from injected `reloj`; caller passes `asesorId` (required); notifier port `notificarDecision({estudianteId, solicitudId, estado})` fires on approve AND reject (reject notification is the writer's addition); rejection reason non-blank string; `consultarHistorial(id)` returns `{solicitudId, estado, decision:{tipo, asesorId, fecha, motivo?}}` or undefined; decision log in memory, not tied to the registry.
 
+- T5 commit e33fabf: first `assess` read returned risk=high, changed_lines=0 (reason code unavailable in output); re-run with identical flags returned medium, 263 lines, under_budget. Treated the re-run as authoritative; cause of the inconsistent first read not determined. No review due.
+
+- T6 e2s3 (delegated writer): RED observed (`MODULE_NOT_FOUND` for `./consultaEstadoEvaluacion`), GREEN 85/85 via `npm test`; `openspec validate e2s3 --strict` valid. New files only. Branch note: writer started while the working tree was on the e1s3 branch (my branch-creation slip); switched to the e2s3 branch (same commit e33fabf) with only uncommitted changes, nothing mixed.
+  - Writer skipped the `graphify query` orientation step (project rule); read-only view over existing outputs, low impact.
+  - Assumptions to confirm (spec silent): input `{idEstudiante, evaluacion:{idEstudiante, resultado, caso?}}`; `limitrofe` without a committee case or `en_revision_comite` shows `limitrofe en revisión`; after a committee decision `clasificacion` shows `otorgada`/`denegada` plus `decisionComite`/`comentarioComite`; `datosFaltantes: [{campo, categoria}]` (`academico`/`socioeconomico`) only when `datos_incompletos`; mismatched student throws `ErrorEvaluacionAjena`, missing evaluation `ErrorEvaluacionNoDisponible`; numeric score never exposed (epics note); inputs not mutated.
+
 ## Next step
-T6 e2s3 on a new branch stacked on S8, then T7 e3s3, then close wave 3.
+T7 e3s3 on a new branch stacked on S9, then close wave 3.
