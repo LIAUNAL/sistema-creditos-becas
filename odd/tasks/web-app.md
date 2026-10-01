@@ -26,7 +26,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 - [x] T6 (P6) Collecting notifier + outbox + transaction helper (C2 design), two atomicity tests
 - [x] T7 (P7) Persistence for solicitud-credito modules, write-back per D2 (size:exception candidate)
 - [x] T8 (P8) Student credit flow (1.1, 1.2)
-- [ ] T9 (P9) Advisor flow (1.3)
+- [x] T9 (P9) Advisor flow (1.3)
 - [ ] T10 (P10) Loan terms + calendar generation (3.1) (size:exception candidate)
 - [ ] T11 (P11) Scholarship part 1 (2.1): applications, eligibility run, `scholarship_awards`
 - [ ] T12 (P12) Scholarship part 2 (2.2): committee queue, member id in audit_log
@@ -97,5 +97,12 @@ Native review assessed per work-unit commit; the user's consent per candidate is
   - Known smell: `src/app` imports `crearPoliticas` from `src/web` (layering: politicas should live in `src/app`); `HEAD /estilos.css` -> 404 (router only registers GET).
   - Size ~1,350 lines (views, tests, CSS) -> `size:exception` for the PR slice (forecast was ~380).
 
+- T8 commit ee4b860.
+- T9 (delegated writer, branch `feat/e5s9-flujo-asesor`): RED observed (`Cannot find module './servicioAsesor'` + failing policy/web tests), GREEN 325/325 on two consecutive full runs (299 + 26 new); `openspec validate e5s9 --strict` valid. Parent independent real run with 4 roles on a temp DB: advisor login -> `/asesor/cola` with a claim button and no socioeconomic values; detail before claiming 404; claim 303; detail after claim shows the data to the assigned advisor; reject with empty reason 400; without CSRF 403; with reason 303; student list shows `rechazada`; direction `GET /direccion/solicitudes/:id` 200 with NO income/estrato/occupation/reason in the HTML; committee and student on advisor routes 403, committee on the direction summary 403; `audit_log` has `asignar` and `rechazar` (rol `asesor_financiero`, objetivo `solicitud_credito:<id>`); outbox `envio` + `decision` for the student; SIGTERM exit 0.
+  - Design: `src/app/servicioAsesor.js` (`listarCola`, `reclamar`, `obtenerParaAsesor`, `rechazar`, plus `crearServicioDireccion.obtenerResumen`); audit entries written in the `persistir` callback so state + decision row + audit + outbox share ONE transaction (3 forced-failure atomicity tests); reason required (trimmed, max 1000); decision on a request held by another advisor 403 (ownership checked before reason validation), detail of another's request 404, claiming a draft 404, claiming a non-`pendiente_revision` request 409; direction summary built from a whitelist AND projected, no reason shown; advisors land on `/asesor/cola` after login and on `/`. NO approve action (belongs to P10 with the loan terms).
+  - P5 policy test changes (deliberate, from Story 5.9): `puedeVerSolicitud` now true for `direccion_academica` (callers must use `proyectarSolicitud`); `politicas.test.js` matrix row `direccion` `[...false,false,true]` -> `[...true,false,true]` + a new test; `accesoARecurso.test.js` "direccion y comite reciben 404" split: direction gets 200 projected, committee still 404. The NFR-003 table-driven tests are untouched and green.
+  - Known UX gap: direction (and committee) login still lands on `/solicitudes`, which is a 403 page for them; fix when their screens exist (P12/P13/P17).
+  - Size ~740 lines (source + tests) -> `size:exception` candidate.
+
 ## Next step
-T9 (P9, change `e5s9-...`) advisor flow (1.3): queue, claim, decide, via delegated writer on a new branch stacked on `feat/e5s8-flujo-estudiante`.
+T10 (P10, change `e5s10-...`, size:exception candidate) loan terms + approval + calendar generation (3.1) via delegated writer on a new branch stacked on `feat/e5s9-flujo-asesor`.

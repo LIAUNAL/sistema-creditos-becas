@@ -72,6 +72,16 @@ test('un asesor asignado ve la solicitud; con una no asignada a el, se deniega',
   assert.strictEqual(politicas.puedeVerSolicitud(usuarios.asesor, solicitudDe(usuarios.estudiante, 'sol-2')), false);
 });
 
+test('direccion academica puede abrir una solicitud, pero solo por la proyeccion sin campos socioeconomicos', () => {
+  const { usuarios, politicas } = preparar();
+  const solicitud = solicitudDe(usuarios.estudiante);
+  assert.strictEqual(politicas.puedeVerSolicitud(usuarios.direccion, solicitud), true);
+  const proyectada = politicas.proyectarSolicitud(usuarios.direccion, solicitud);
+  for (const campo of CAMPOS_SOCIOECONOMICOS) assert.ok(!(campo in proyectada), campo);
+  // El comite sigue sin acceso a las solicitudes de credito.
+  assert.strictEqual(politicas.puedeVerSolicitud(usuarios.comite, solicitud), false);
+});
+
 test('un integrante del comite asignado ve el caso; sin asignacion, se deniega', () => {
   const { usuarios, asignaciones, politicas } = preparar();
   asignaciones.asignar({
@@ -125,6 +135,8 @@ test('matriz rol x recurso: solicitud, caso del comite y reportes', () => {
     actor: { nombre_usuario: 'sistema', rol: 'sistema' },
   });
   // [usuario, solicitud propia/asignada, caso, reportes]
+  // Story 5.9: direccion_academica puede ABRIR una solicitud (solo por la vista proyectada, sin
+  // campos socioeconomicos); antes de esta story la matriz decia `false` para `direccion`.
   const esperado = [
     ['estudiante', true, false, false],
     ['otroEstudiante', false, false, false],
@@ -132,7 +144,7 @@ test('matriz rol x recurso: solicitud, caso del comite y reportes', () => {
     ['otroAsesor', false, false, false],
     ['comite', false, true, false],
     ['comiteSinAsignar', false, false, false],
-    ['direccion', false, false, true],
+    ['direccion', true, false, true],
   ];
   for (const [clave, verSolicitud, verCaso, verReportes] of esperado) {
     const usuario = usuarios[clave];

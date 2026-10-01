@@ -42,6 +42,7 @@ function navegacion(usuario, csrf) {
   return html`<nav aria-label="Principal">
 ${usuario.rol === 'estudiante' ? html`<a href="/solicitudes">Mis solicitudes</a>
 <a href="/solicitudes/nueva">Nueva solicitud</a>` : ''}
+${usuario.rol === 'asesor_financiero' ? html`<a href="/asesor/cola">Cola de revisión</a>` : ''}
 <form method="post" action="/logout" class="en-linea">
 ${campoCsrf(csrf)}
 <button type="submit" class="boton-secundario">Cerrar sesión (${usuario.nombre_usuario})</button>
@@ -262,7 +263,126 @@ function vistaError({ estado, usuario, csrf }) {
     usuario,
     csrf,
     contenido: html`<h1>${titulo}</h1><p>${mensaje}</p>
-${usuario?.rol === 'estudiante' ? html`<p><a href="/solicitudes">Volver a mis solicitudes</a></p>` : ''}`,
+${usuario?.rol === 'estudiante' ? html`<p><a href="/solicitudes">Volver a mis solicitudes</a></p>` : ''}
+${usuario?.rol === 'asesor_financiero' ? html`<p><a href="/asesor/cola">Volver a la cola de revisión</a></p>` : ''}`,
+  });
+}
+
+// ---------------------------------------------------------------- Asesor financiero (Story 5.9)
+
+function vistaCola({ usuario, csrf, cola, resumenErrores = null }) {
+  const contenido = cola.length === 0
+    ? html`<p>No hay solicitudes pendientes de revisión.</p>`
+    : html`<table>
+<caption>Solicitudes pendientes de revisión</caption>
+<thead>
+<tr><th scope="col">Periodo</th><th scope="col">Creada</th><th scope="col">Asignación</th><th scope="col">Acción</th></tr>
+</thead>
+<tbody>
+${cola.map((s) => html`<tr>
+<td>${s.periodoAcademico}</td>
+<td><time datetime="${s.creadaEn}">${String(s.creadaEn).slice(0, 10)}</time></td>
+<td>${s.asignadaAMi ? 'Asignada a usted' : 'Sin asignar'}</td>
+<td>${s.asignadaAMi
+    ? html`<a href="/asesor/solicitudes/${s.id}">Revisar solicitud ${s.periodoAcademico}</a>`
+    : html`<form method="post" action="/asesor/solicitudes/${s.id}/reclamar" class="en-linea">
+${campoCsrf(csrf)}
+<button type="submit">Reclamar solicitud ${s.periodoAcademico}</button>
+</form>`}</td>
+</tr>`)}
+</tbody>
+</table>`;
+  return pagina({
+    titulo: 'Cola de revisión',
+    usuario,
+    csrf,
+    contenido: html`<h1>Cola de revisión</h1>
+${resumenErrores ? resumen(resumenErrores.titulo, resumenErrores.elementos) : ''}
+<p>Reclame una solicitud para ver sus datos y decidirla.</p>
+${contenido}`,
+  });
+}
+
+function seccionRechazo({ solicitud, csrf, valorMotivo, errorMotivo }) {
+  const descripcion = ['motivo-ayuda', errorMotivo ? 'motivo-error' : null].filter(Boolean).join(' ');
+  return html`<section aria-labelledby="rechazar">
+<h2 id="rechazar">Rechazar la solicitud</h2>
+<form method="post" action="/asesor/solicitudes/${solicitud.id}/rechazar">
+${campoCsrf(csrf)}
+<div class="campo">
+<label for="motivo">Motivo del rechazo</label>
+<p id="motivo-ayuda" class="ayuda">Obligatorio. El estudiante será notificado de la decisión.</p>
+${errorMotivo ? html`<p id="motivo-error" class="error-campo"><span class="solo-lectores">Error: </span>${errorMotivo}</p>` : ''}
+<textarea id="motivo" name="motivo" rows="4" required${errorMotivo ? html` aria-invalid="true"` : ''} aria-describedby="${descripcion}">${valorMotivo ?? ''}</textarea>
+</div>
+<button type="submit">Rechazar solicitud</button>
+</form>
+</section>`;
+}
+
+// `detalle`: { solicitud, documentos, decision }. El formulario de rechazo solo se ofrece mientras
+// la solicitud sigue pendiente de revision.
+function vistaDetalleAsesor({ usuario, csrf, detalle, resumenErrores = null, valorMotivo, errorMotivo }) {
+  const { solicitud, documentos, decision } = detalle;
+  return pagina({
+    titulo: `Revisión ${solicitud.periodoAcademico}`,
+    usuario,
+    csrf,
+    contenido: html`<h1>Revisión de la solicitud ${solicitud.periodoAcademico}</h1>
+${resumenErrores ? resumen(resumenErrores.titulo, resumenErrores.elementos) : ''}
+<dl class="datos">
+<dt>Estado</dt><dd><strong>${etiquetaEstado(solicitud.estado)}</strong> (<code>${solicitud.estado}</code>)</dd>
+<dt>Periodo académico</dt><dd>${solicitud.periodoAcademico}</dd>
+<dt>Ingresos mensuales del hogar</dt><dd>${solicitud.ingresosHogar}</dd>
+<dt>Número de dependientes</dt><dd>${solicitud.numeroDependientes}</dd>
+<dt>Estrato</dt><dd>${solicitud.estrato}</dd>
+<dt>Ocupación del acudiente</dt><dd>${solicitud.ocupacionAcudiente}</dd>
+<dt>Creada</dt><dd><time datetime="${solicitud.creadaEn}">${String(solicitud.creadaEn).slice(0, 10)}</time></dd>
+</dl>
+<section aria-labelledby="documentos">
+<h2 id="documentos">Documentos adjuntados</h2>
+${documentos.length === 0
+    ? html`<p>No hay documentos adjuntados.</p>`
+    : html`<ul>
+${documentos.map((d) => html`<li>${etiquetaDocumento(d.tipo)}: <code>${d.nombreArchivo}</code></li>`)}
+</ul>`}
+</section>
+${decision
+    ? html`<section aria-labelledby="decision">
+<h2 id="decision">Decisión registrada</h2>
+<dl class="datos">
+<dt>Tipo</dt><dd><code>${decision.tipo}</code></dd>
+<dt>Fecha</dt><dd><time datetime="${decision.fecha}">${String(decision.fecha).slice(0, 10)}</time></dd>
+${decision.motivo ? html`<dt>Motivo</dt><dd>${decision.motivo}</dd>` : ''}
+</dl>
+</section>`
+    : solicitud.estado === 'pendiente_revision'
+      ? seccionRechazo({ solicitud, csrf, valorMotivo, errorMotivo })
+      : ''}
+<p><a href="/asesor/cola">Volver a la cola de revisión</a></p>`,
+  });
+}
+
+// ---------------------------------------------------------------- Direccion academica (Story 5.9)
+
+// Resumen de solo lectura: nunca recibe campos socioeconomicos (el servicio los proyecta fuera).
+function vistaResumenDireccion({ usuario, csrf, resumenSolicitud }) {
+  const { id, periodoAcademico, estado, decision } = resumenSolicitud;
+  return pagina({
+    titulo: `Resumen ${periodoAcademico}`,
+    usuario,
+    csrf,
+    contenido: html`<h1>Resumen de la solicitud ${periodoAcademico}</h1>
+<dl class="datos">
+<dt>Identificador</dt><dd><code>${id}</code></dd>
+<dt>Periodo académico</dt><dd>${periodoAcademico}</dd>
+<dt>Estado</dt><dd><strong>${etiquetaEstado(estado)}</strong> (<code>${estado}</code>)</dd>
+${decision
+    ? html`<dt>Tipo de decisión</dt><dd><code>${decision.tipo}</code></dd>
+<dt>Fecha de la decisión</dt><dd><time datetime="${decision.fecha}">${String(decision.fecha).slice(0, 10)}</time></dd>`
+    : html`<dt>Decisión</dt><dd>Aún no hay decisión.</dd>`}
+</dl>
+<p>Vista de solo lectura: no incluye información socioeconómica.</p>`,
   });
 }
 
@@ -272,6 +392,9 @@ module.exports = {
   vistaFormularioSolicitud,
   vistaDetalle,
   vistaError,
+  vistaCola,
+  vistaDetalleAsesor,
+  vistaResumenDireccion,
   etiquetaDocumento,
   etiquetaEstado,
 };

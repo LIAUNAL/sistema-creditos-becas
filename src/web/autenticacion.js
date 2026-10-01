@@ -173,7 +173,7 @@ function crearAutenticacion({
     });
     res.setHeader('Set-Cookie', cookieDeSesion(req, token, Math.floor(duracionSesionMs / 1000)));
     if (desdeFormulario) {
-      redirigir(res, '/solicitudes');
+      redirigir(res, usuario.rol === 'asesor_financiero' ? '/asesor/cola' : '/solicitudes');
       return;
     }
     responderJson(res, 200, {

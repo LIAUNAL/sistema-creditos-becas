@@ -114,8 +114,21 @@ async function crearBorradorPorFormulario(cliente, datos = {}) {
   return coincidencia[1];
 }
 
+// Crea un borrador, adjunta los tres documentos y lo envia a revision; devuelve el id.
+async function crearSolicitudEnviada(cliente, datos = {}) {
+  const id = await crearBorradorPorFormulario(cliente, datos);
+  for (const documento of DOCUMENTOS) {
+    const respuesta = await cliente.post(`/solicitudes/${id}/documentos`, documento);
+    if (respuesta.estado !== 303) throw new Error(`no se adjunto el documento: ${respuesta.estado}`);
+  }
+  const envio = await cliente.post(`/solicitudes/${id}/enviar`);
+  if (envio.estado !== 303) throw new Error(`no se envio la solicitud: ${envio.estado}`);
+  return id;
+}
+
 module.exports = {
   CLAVES,
+  crearSolicitudEnviada,
   DATOS_FORMULARIO,
   DOCUMENTOS,
   levantarAplicacion,

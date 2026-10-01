@@ -57,8 +57,12 @@ function crearPoliticas({ asignaciones }) {
         return esEstudianteDe(usuario, solicitud);
       case 'asesor_financiero':
         return asignaciones.estaAsignado(usuario.id, 'solicitud_credito', solicitud.id);
+      case 'direccion_academica':
+        // Story 5.9: puede ABRIR la solicitud, pero solo por la vista proyectada: quien la use debe
+        // pasar el recurso por `proyectarSolicitud`, que le quita todo campo socioeconomico (NFR-003).
+        return true;
       default:
-        return false; // comite_becas no ve solicitudes de credito; direccion_academica tampoco.
+        return false; // comite_becas no ve solicitudes de credito.
     }
   }
 
