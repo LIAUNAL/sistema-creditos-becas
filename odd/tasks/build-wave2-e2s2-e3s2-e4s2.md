@@ -28,7 +28,7 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 - [x] T2 e3s2 — slice S6 (spec 1.1-1.2, 2.1-2.2)
 - [x] T3 e4s2 — slice S7 (spec 1.1-1.2, 2.1-2.2)
 - [x] T4 close wave 2: `npx un-specweaver close --done` — 3 archived, 0 failures. `validate --all --strict`: 6/10 pass; the 4 main specs (`solicitud-de-credito`, `desembolso-y-seguimiento`, `evaluacion-de-elegibilidad-para-becas`, `reportes-para-direccion-academica`) each fail only on the `[WARNING] Purpose section is still a placeholder` created by `archive`. Fix = write a real `## Purpose` in each `openspec/specs/*/spec.md` (product wording, pending).
-- [ ] T5 e1s3 — slice S8 (wave 3)
+- [x] T5 e1s3 — slice S8 (wave 3)
 - [ ] T6 e2s3 — slice S9 (wave 3)
 - [ ] T7 e3s3 — slice S10 (wave 3)
 - [ ] T8 `npx @fission-ai/openspec validate --all --strict` + close wave 3: `npx un-specweaver close --done`
@@ -53,5 +53,9 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
   - Assumptions to confirm (spec silent): rate = `vencido` / (`programado`+`ejecutado`+`vencido`) per period (from epics.md 4.2 technical note); alert only when rate strictly > threshold; zero denominator -> rate 0, no alert; threshold is a fraction 0..1, non-numeric throws `TypeError`; alert shape `{periodoAcademico, tasaMora, umbral}` or `null`; disbursement carries `periodoAcademico` directly; no delivery port.
   - Third state name in play: 4.1 sums `desembolsado`, 3.2 emits `ejecutado`, 4.2 uses `ejecutado`/`vencido`. Only 4.1 is inconsistent (already flagged).
 
+- Wave 2 closed: archive commit c21c6e1 on `feat/e4s2-alerta-tasa-mora`; slices S5 8ecde7b (review declined), S6 8d1129f, S7 9f0c997 (S6/S7 medium, under budget).
+- T5 e1s3 (delegated writer): RED observed (`Cannot find module './decisionAsesor'`), GREEN 73/73 via `npm test`; `openspec validate e1s3 --strict` valid. New files in `src/solicitud-credito/`; no existing source edited.
+  - Assumptions to confirm (spec silent): rejected state `rechazada`; only `pendiente_revision` can be decided (else `ErrorSolicitudNoEnRevision`); decision date from injected `reloj`; caller passes `asesorId` (required); notifier port `notificarDecision({estudianteId, solicitudId, estado})` fires on approve AND reject (reject notification is the writer's addition); rejection reason non-blank string; `consultarHistorial(id)` returns `{solicitudId, estado, decision:{tipo, asesorId, fecha, motivo?}}` or undefined; decision log in memory, not tied to the registry.
+
 ## Next step
-Close wave 2, then wave 3 (e1s3, e2s3, e3s3) on stacked branches.
+T6 e2s3 on a new branch stacked on S8, then T7 e3s3, then close wave 3.
