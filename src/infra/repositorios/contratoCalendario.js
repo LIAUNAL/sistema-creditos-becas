@@ -89,6 +89,17 @@ function definirSuiteDeContratoCalendario(nombre, fabrica) {
     assert.deepStrictEqual(ids(await ciclo(() => repositorio.obtenerPorSolicitud('s2'))), ['s2-cuota-1']);
   });
 
+  prueba('obtenerPorId devuelve el desembolso (misma instancia dentro del ciclo) o undefined si no existe', async ({ repositorio, ciclo, sembrar }) => {
+    sembrar('s1');
+    await ciclo(() => repositorio.guardar('s1', [desembolso('s1', 1, COMPLETOS), desembolso('s1', 2, COMPLETOS)]));
+
+    const leido = await ciclo(() => repositorio.obtenerPorId('s1-cuota-2'));
+    assert.deepStrictEqual(leido, desembolso('s1', 2, COMPLETOS));
+    assert.strictEqual(await ciclo(() => repositorio.obtenerPorId('no-existe')), undefined);
+    const mismaInstancia = await ciclo(() => repositorio.obtenerPorId('s1-cuota-1') === repositorio.obtenerPorSolicitud('s1')[0]);
+    assert.strictEqual(mismaInstancia, true);
+  });
+
   prueba('registrarError y listarErrores conservan el orden y la forma', async ({ repositorio, ciclo }) => {
     const primero = { solicitudId: 's1', codigo: 'MONTO_INVALIDO', mensaje: 'monto', registradoEn: '2026-05-04T12:30:00.000Z' };
     const segundo = { solicitudId: 's2', codigo: 'FECHA_INVALIDA', mensaje: 'fecha', registradoEn: '2026-05-04T12:31:00.000Z' };

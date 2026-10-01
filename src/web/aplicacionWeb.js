@@ -22,6 +22,7 @@ function crearAplicacionWeb({ db, reloj, csrf = crearCsrf(), auditoria = crearAu
   const paginasAsesor = crearRutasAsesor({
     servicioAsesor: contexto.servicioAsesor,
     servicioCondiciones: contexto.servicioCondiciones,
+    servicioDesembolsos: contexto.servicioDesembolsos,
     servicioDireccion: contexto.servicioDireccion,
     autenticacion,
     csrf,

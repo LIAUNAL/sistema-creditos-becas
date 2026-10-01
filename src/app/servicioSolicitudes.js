@@ -3,6 +3,7 @@
 const { ejecutarCasoDeUso } = require('../infra/casoDeUso');
 const { crearUnidadDeTrabajo } = require('../infra/unidadDeTrabajo');
 const { DOCUMENTOS_REQUERIDOS_POR_DEFECTO } = require('../solicitud-credito/envioSolicitud');
+const { proyectarCalendario } = require('./proyeccionCalendario');
 
 // Casos de uso del flujo del estudiante (Story 5.8). Cada uno corre en `ejecutarCasoDeUso` con su
 // propia unidad de trabajo: el estado mutado y las notificaciones recolectadas se confirman en una
@@ -105,7 +106,7 @@ function validarDocumento({ tipo, nombreArchivo } = {}) {
   return { tipo, nombreArchivo: nombre };
 }
 
-function crearServicioSolicitudes({ db, reloj, colector, registro, envio, repositorios, politicas }) {
+function crearServicioSolicitudes({ db, reloj, colector, registro, envio, repositorios, politicas, ejecucion }) {
   // Cada llamada es un caso de uso con su propia unidad de trabajo (identity map aislado).
   const caso = (operacion) =>
     ejecutarCasoDeUso({ db, colector, reloj, unidadDeTrabajo: crearUnidadDeTrabajo(), operacion });
@@ -170,9 +171,10 @@ function crearServicioSolicitudes({ db, reloj, colector, registro, envio, reposi
         };
         // Story 5.10: el estudiante conoce cuando y cuanto se le desembolsa (solo lectura).
         if (solicitud.estado === 'aprobada') {
-          detalle.calendario = repositorios.calendario
-            .obtenerPorSolicitud(solicitudId)
-            .map(({ numeroCuota, fecha, monto, estado }) => ({ numeroCuota, fecha, monto, estado }));
+          // Story 5.14: con la fecha de ejecucion y el estado del historial del modulo (sin ids internos).
+          detalle.calendario = proyectarCalendario(ejecucion, repositorios.calendario.obtenerPorSolicitud(solicitudId)).map(
+            ({ id: _id, ...cuota }) => cuota,
+          );
         }
         return detalle;
       });

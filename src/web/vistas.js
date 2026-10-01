@@ -253,7 +253,7 @@ function seccionCalendario(calendario) {
 <table>
 <caption>Cuotas de desembolso programadas</caption>
 <thead>
-<tr><th scope="col">Cuota</th><th scope="col">Fecha</th><th scope="col">Monto</th><th scope="col">Estado</th></tr>
+<tr><th scope="col">Cuota</th><th scope="col">Fecha</th><th scope="col">Monto</th><th scope="col">Estado</th><th scope="col">Fecha de ejecución</th></tr>
 </thead>
 <tbody>
 ${calendario.map((cuota) => html`<tr>
@@ -261,11 +261,18 @@ ${calendario.map((cuota) => html`<tr>
 <td><time datetime="${cuota.fecha}">${cuota.fecha}</time></td>
 <td>${dosDecimales(cuota.monto)}</td>
 <td>${etiquetaDesembolso(cuota.estado)} (<code>${cuota.estado}</code>)</td>
+<td>${celdaFechaEjecucion(cuota)}</td>
 </tr>`)}
 </tbody>
 </table>
 </section>`;
 }
+
+// Story 5.14: fecha en que se ejecuto la cuota, o aviso de que aun no se ejecuta.
+const celdaFechaEjecucion = (cuota) =>
+  cuota.fechaEjecucion
+    ? html`<time datetime="${cuota.fechaEjecucion}">${cuota.fechaEjecucion}</time>`
+    : html`Sin ejecutar`;
 
 // `resumenErrores`: `{ titulo, elementos }` opcional para mostrar mensajes sobre la solicitud.
 function vistaDetalle({
@@ -384,7 +391,40 @@ ${CAMPOS_APROBACION.map((c) => campoDeTexto({ ...c, valores: valoresAprobacion, 
 </section>`;
 }
 
-// `detalle`: { solicitud, documentos, decision }. Los formularios de aprobacion y rechazo solo se
+// Story 5.14: calendario de la solicitud aprobada para el asesor asignado. El boton de ejecutar solo
+// se ofrece en las cuotas `programado`; en las ejecutadas se muestra la fecha de ejecucion.
+function seccionDesembolsosAsesor({ desembolsos, csrf }) {
+  if (desembolsos.length === 0) {
+    return html`<section aria-labelledby="calendario"><h2 id="calendario">Calendario de desembolsos</h2>
+<p>No hay desembolsos programados.</p></section>`;
+  }
+  return html`<section aria-labelledby="calendario">
+<h2 id="calendario">Calendario de desembolsos</h2>
+<table>
+<caption>Cuotas de desembolso de la solicitud</caption>
+<thead>
+<tr><th scope="col">Cuota</th><th scope="col">Fecha</th><th scope="col">Monto</th><th scope="col">Estado</th><th scope="col">Fecha de ejecución</th><th scope="col">Acción</th></tr>
+</thead>
+<tbody>
+${desembolsos.map((cuota) => html`<tr>
+<td>${cuota.numeroCuota}</td>
+<td><time datetime="${cuota.fecha}">${cuota.fecha}</time></td>
+<td>${dosDecimales(cuota.monto)}</td>
+<td>${etiquetaDesembolso(cuota.estado)} (<code>${cuota.estado}</code>)</td>
+<td>${celdaFechaEjecucion(cuota)}</td>
+<td>${cuota.estado === 'programado'
+    ? html`<form method="post" action="/asesor/desembolsos/${cuota.id}/ejecutar">
+${campoCsrf(csrf)}
+<button type="submit">Ejecutar desembolso</button>
+</form>`
+    : html`Sin acciones`}</td>
+</tr>`)}
+</tbody>
+</table>
+</section>`;
+}
+
+// `detalle`: { solicitud, documentos, decision, desembolsos? }. Los formularios de aprobacion y rechazo solo se
 // ofrecen mientras la solicitud sigue pendiente de revision.
 function vistaDetalleAsesor({
   usuario,
@@ -396,7 +436,7 @@ function vistaDetalleAsesor({
   valoresAprobacion,
   erroresAprobacion,
 }) {
-  const { solicitud, documentos, decision } = detalle;
+  const { solicitud, documentos, decision, desembolsos } = detalle;
   return pagina({
     titulo: `Revisión ${solicitud.periodoAcademico}`,
     usuario,
@@ -433,6 +473,7 @@ ${decision.motivo ? html`<dt>Motivo</dt><dd>${decision.motivo}</dd>` : ''}
       ? html`${seccionAprobacion({ solicitud, csrf, valoresAprobacion, erroresAprobacion })}
 ${seccionRechazo({ solicitud, csrf, valorMotivo, errorMotivo })}`
       : ''}
+${desembolsos ? seccionDesembolsosAsesor({ desembolsos, csrf }) : ''}
 <p><a href="/asesor/cola">Volver a la cola de revisión</a></p>`,
   });
 }
