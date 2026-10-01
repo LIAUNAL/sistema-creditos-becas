@@ -6,6 +6,9 @@ const { crearNotificadorColector } = require('../infra/notificadorColector');
 const { crearRepositorioSolicitudesSqlite } = require('../infra/repositorios/repositorioSolicitudesSqlite');
 const { crearRepositorioDocumentosSqlite } = require('../infra/repositorios/repositorioDocumentosSqlite');
 const { crearRepositorioDecisionesSqlite } = require('../infra/repositorios/repositorioDecisionesSqlite');
+const { crearRepositorioCalendarioSqlite } = require('../infra/repositorios/repositorioCalendarioSqlite');
+const { crearRepositorioCondicionesSqlite } = require('../infra/repositorios/repositorioCondicionesSqlite');
+const { CalendarioDesembolso } = require('../desembolso/calendarioDesembolso');
 const { RegistroSolicitudCredito } = require('../solicitud-credito/registroSolicitudCredito');
 const { EnvioSolicitudCredito } = require('../solicitud-credito/envioSolicitud');
 const { DecisionAsesorFinanciero } = require('../solicitud-credito/decisionAsesor');
@@ -13,6 +16,7 @@ const { DecisionAsesorFinanciero } = require('../solicitud-credito/decisionAseso
 const { crearPoliticas } = require('../web/politicas');
 const { crearServicioSolicitudes } = require('./servicioSolicitudes');
 const { crearServicioAsesor, crearServicioDireccion } = require('./servicioAsesor');
+const { crearServicioCondiciones, MAXIMO_CUOTAS } = require('./servicioCondiciones');
 
 /**
  * Construye UNA sola vez las piezas de larga vida de la aplicacion: colector de notificaciones,
@@ -25,7 +29,14 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     solicitudes: crearRepositorioSolicitudesSqlite({ db }),
     documentos: crearRepositorioDocumentosSqlite({ db }),
     decisiones: crearRepositorioDecisionesSqlite({ db }),
+    calendario: crearRepositorioCalendarioSqlite({ db }),
+    condiciones: crearRepositorioCondicionesSqlite({ db }),
   };
+  const calendario = new CalendarioDesembolso({
+    repositorio: repositorios.calendario,
+    reloj: () => reloj.ahora(),
+    maximoCuotas: MAXIMO_CUOTAS,
+  });
   const registro = new RegistroSolicitudCredito({ repositorio: repositorios.solicitudes });
   const envio = new EnvioSolicitudCredito({ registro, notificador: colector, repositorio: repositorios.documentos });
   const decision = new DecisionAsesorFinanciero({
@@ -45,8 +56,21 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     repositorios,
     politicas,
   });
-  const piezas = { db, reloj, auditoria, colector, registro, envio, decision, repositorios, asignaciones, politicas };
+  const piezas = {
+    db,
+    reloj,
+    auditoria,
+    colector,
+    registro,
+    envio,
+    decision,
+    calendario,
+    repositorios,
+    asignaciones,
+    politicas,
+  };
   const servicioAsesor = crearServicioAsesor(piezas);
+  const servicioCondiciones = crearServicioCondiciones(piezas);
   const servicioDireccion = crearServicioDireccion(piezas);
   return {
     colector,
@@ -54,10 +78,12 @@ function crearContextoApp({ db, reloj, auditoria = crearAuditoria({ db, reloj })
     registro,
     envio,
     decision,
+    calendario,
     asignaciones,
     politicas,
     servicioSolicitudes,
     servicioAsesor,
+    servicioCondiciones,
     servicioDireccion,
   };
 }

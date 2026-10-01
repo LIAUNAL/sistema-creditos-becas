@@ -227,7 +227,7 @@ test('el detalle del asesor asignado muestra datos socioeconomicos, documentos y
   }
   assert.match(detalle.texto, new RegExp(`action="/asesor/solicitudes/${id}/rechazar"`));
   assert.match(detalle.texto, /<input type="hidden" name="_csrf" value="[0-9a-f]{64}">/);
-  assert.ok(!/aprobar/i.test(detalle.texto), 'la aprobacion llega en la siguiente slice');
+  assert.match(detalle.texto, new RegExp(`action="/asesor/solicitudes/${id}/aprobar"`), 'la aprobacion llega con la slice P10');
 });
 
 test('rechazar dos veces da 409 y no repite auditoria ni aviso', async (t) => {

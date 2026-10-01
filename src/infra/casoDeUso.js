@@ -18,7 +18,20 @@ const LIMITE_POR_DEFECTO = 50;
 // resuelvan el mismo mapa de identidad, y en la misma transaccion, ANTES de `persistir` y del
 // outbox, se llama `unidadDeTrabajo.volcar(db)`: estado y outbox se confirman juntos o ninguno,
 // tambien cuando la operacion lanzo tras mutar. `persistir` pasa a ser opcional cuando hay unidad.
-async function ejecutarCasoDeUso({ db, colector, reloj, operacion, persistir, unidadDeTrabajo }) {
+//
+// Story 5.10: `confirmarSiError` (por defecto `true`, el comportamiento de siempre). Con `false`, un
+// error de la operacion lo revierte TODO: no se vuelca la unidad de trabajo, no se llama a `persistir`
+// ni se insertan filas de outbox, y el error se relanza tal cual. Sirve a las operaciones que deben
+// validar antes de comprometer su resultado (p. ej. aprobar un credito con sus condiciones).
+async function ejecutarCasoDeUso({
+  db,
+  colector,
+  reloj,
+  operacion,
+  persistir,
+  unidadDeTrabajo,
+  confirmarSiError = true,
+}) {
   const recolectadas = [];
   let resultado;
   let errorOperacion;
@@ -29,6 +42,7 @@ async function ejecutarCasoDeUso({ db, colector, reloj, operacion, persistir, un
   try {
     resultado = await (unidadDeTrabajo ? unidadDeTrabajo.correr(correrOperacion) : correrOperacion());
   } catch (error) {
+    if (!confirmarSiError) throw error;
     fallo = true;
     errorOperacion = error;
   }
