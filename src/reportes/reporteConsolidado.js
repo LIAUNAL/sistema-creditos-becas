@@ -19,7 +19,8 @@
 
 const ESTADO_SOLICITUD_APROBADA = 'aprobada';
 const ESTADO_BECA_OTORGADA = 'otorgada';
-const ESTADO_DESEMBOLSO_EFECTUADO = 'desembolsado';
+// Estado de un desembolso ejecutado según la spec de desembolso y seguimiento (Story 3.2).
+const ESTADO_DESEMBOLSO_EJECUTADO = 'ejecutado';
 
 function aCentavos(monto) {
   return typeof monto === 'number' && Number.isFinite(monto) ? Math.round(monto * 100) : 0;
@@ -57,7 +58,7 @@ function generarReporteConsolidado(periodoAcademico, datos = {}) {
   const centavosDesembolsados = desembolsos
     .filter(
       (desembolso) =>
-        desembolso.estado === ESTADO_DESEMBOLSO_EFECTUADO && idsDelPeriodo.has(desembolso.solicitudId)
+        desembolso.estado === ESTADO_DESEMBOLSO_EJECUTADO && idsDelPeriodo.has(desembolso.solicitudId)
     )
     .reduce((acumulado, desembolso) => acumulado + aCentavos(desembolso.monto), 0);
 
@@ -71,5 +72,5 @@ function generarReporteConsolidado(periodoAcademico, datos = {}) {
 
 module.exports = {
   generarReporteConsolidado,
-  ESTADO_DESEMBOLSO_EFECTUADO,
+  ESTADO_DESEMBOLSO_EJECUTADO,
 };
