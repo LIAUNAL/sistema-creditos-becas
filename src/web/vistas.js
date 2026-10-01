@@ -49,9 +49,11 @@ const campoCsrf = (csrf) => html`<input type="hidden" name="_csrf" value="${csrf
 function navegacion(usuario, csrf) {
   return html`<nav aria-label="Principal">
 ${usuario.rol === 'estudiante' ? html`<a href="/solicitudes">Mis solicitudes</a>
-<a href="/solicitudes/nueva">Nueva solicitud</a>` : ''}
+<a href="/solicitudes/nueva">Nueva solicitud</a>
+<a href="/becas">Mis becas</a>` : ''}
 ${usuario.rol === 'asesor_financiero' ? html`<a href="/asesor/cola">Cola de revisión</a>` : ''}
 ${usuario.rol === 'comite_becas' ? html`<a href="/comite">Cola del comité</a>` : ''}
+${usuario.rol === 'direccion_academica' ? html`<a href="/direccion">Inicio</a>` : ''}
 <form method="post" action="/logout" class="en-linea">
 ${campoCsrf(csrf)}
 <button type="submit" class="boton-secundario">Cerrar sesión (${usuario.nombre_usuario})</button>
@@ -97,14 +99,15 @@ ${elementos.map(({ campo, mensaje }) =>
 </div>`;
 }
 
-function campoDeTexto({ id, etiqueta, valores, errores, ayuda, modo, tipo = 'text' }) {
+// `requerido: false` para datos que pueden quedar en blanco (p. ej. los de la solicitud de beca).
+function campoDeTexto({ id, etiqueta, valores, errores, ayuda, modo, tipo = 'text', requerido = true }) {
   const error = errores[id];
   const descripcion = [ayuda ? `${id}-ayuda` : null, error ? `${id}-error` : null].filter(Boolean).join(' ');
   return html`<div class="campo">
 <label for="${id}">${etiqueta}</label>
 ${ayuda ? html`<p id="${id}-ayuda" class="ayuda">${ayuda}</p>` : ''}
 ${error ? html`<p id="${id}-error" class="error-campo"><span class="solo-lectores">Error: </span>${error}</p>` : ''}
-<input id="${id}" name="${id}" type="${tipo}" value="${valores[id] ?? ''}"${modo ? html` inputmode="${modo}"` : ''} required${error ? html` aria-invalid="true"` : ''}${descripcion ? html` aria-describedby="${descripcion}"` : ''}>
+<input id="${id}" name="${id}" type="${tipo}" value="${valores[id] ?? ''}"${modo ? html` inputmode="${modo}"` : ''}${requerido ? html` required` : ''}${error ? html` aria-invalid="true"` : ''}${descripcion ? html` aria-describedby="${descripcion}"` : ''}>
 </div>`;
 }
 
@@ -302,39 +305,10 @@ function vistaError({ estado, usuario, csrf }) {
     usuario,
     csrf,
     contenido: html`<h1>${titulo}</h1><p>${mensaje}</p>
-${usuario?.rol === 'estudiante' ? html`<p><a href="/solicitudes">Volver a mis solicitudes</a></p>` : ''}
+${usuario?.rol === 'estudiante' ? html`<p><a href="/solicitudes">Volver a mis solicitudes</a> · <a href="/becas">Volver a mis becas</a></p>` : ''}
 ${usuario?.rol === 'asesor_financiero' ? html`<p><a href="/asesor/cola">Volver a la cola de revisión</a></p>` : ''}
-${usuario?.rol === 'comite_becas' ? html`<p><a href="/comite">Volver a la cola del comité</a></p>` : ''}`,
-  });
-}
-
-// ---------------------------------------------------------------- Comite de becas (Story 5.12)
-
-// Pagina minima: la cola del integrante. El detalle y la decision se consumen por la API JSON hasta P13.
-function vistaColaComite({ usuario, csrf, cola }) {
-  const contenido = cola.length === 0
-    ? html`<p>No hay casos pendientes de revisión.</p>`
-    : html`<table>
-<caption>Casos limítrofes pendientes de revisión</caption>
-<thead>
-<tr><th scope="col">Periodo</th><th scope="col">Ingresó</th><th scope="col">Puntaje</th><th scope="col">Acción</th></tr>
-</thead>
-<tbody>
-${cola.map((c) => html`<tr>
-<td>${c.periodoAcademico}</td>
-<td><time datetime="${c.ingresadoEn}">${c.ingresadoEn.slice(0, 10)}</time></td>
-<td>${c.puntaje}</td>
-<td><a href="/api/comite/casos/${c.id}">Ver caso ${c.periodoAcademico}</a></td>
-</tr>`)}
-</tbody>
-</table>`;
-  return pagina({
-    titulo: 'Cola del comité',
-    usuario,
-    csrf,
-    contenido: html`<h1>Cola del comité de becas</h1>
-<p>Casos limítrofes asignados a usted que esperan una decisión.</p>
-${contenido}`,
+${usuario?.rol === 'comite_becas' ? html`<p><a href="/comite">Volver a la cola del comité</a></p>` : ''}
+${usuario?.rol === 'direccion_academica' ? html`<p><a href="/direccion">Volver al inicio</a></p>` : ''}`,
   });
 }
 
@@ -493,7 +467,11 @@ module.exports = {
   vistaDetalle,
   vistaError,
   vistaCola,
-  vistaColaComite,
+  // Piezas comunes que reutilizan las vistas de becas (vistasBecas.js).
+  pagina,
+  resumen,
+  campoDeTexto,
+  campoCsrf,
   vistaDetalleAsesor,
   vistaResumenDireccion,
   etiquetaDocumento,

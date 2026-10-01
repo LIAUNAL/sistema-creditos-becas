@@ -30,7 +30,7 @@ Q1 stack, Q2 who executes disbursements, Q3 uploads (bytes vs metadata), Q4 scho
 - [x] T10 (P10) Loan terms + calendar generation (3.1) (size:exception candidate)
 - [x] T11 (P11) Scholarship part 1 (2.1): applications, eligibility run, `scholarship_awards`
 - [x] T12 (P12) Scholarship part 2 (2.2): committee queue, member id in audit_log
-- [ ] T13 (P13) Scholarship UI + student status page (2.3)
+- [x] T13 (P13) Scholarship UI + student status page (2.3)
 - [ ] T14 (P14) Disbursement execution (3.2)
 - [ ] T15 (P15) Overdue job + manual trigger (3.3)
 - [ ] T16 (P16) Notifications inbox UI
@@ -122,5 +122,10 @@ Native review assessed per work-unit commit; the user's consent per candidate is
   - Choices: opening an unassigned case -> 404 (denied == not found) while the decision POST -> 403 (assignment checked before existence).
   - KNOWN GAP handed to P13: after a `denegada` decision the student's `/api/becas/solicitudes/:id` still shows "limitrofe en revisión" because the P11 view does not read the committee case (for `otorgada` it shows `becaOtorgada: true`). Story 2.3 requires the student to see the decision; the P13 status page must fix it.
 
+- T12 commit c0c6e29.
+- T13 (delegated writer, branch `feat/e5s13-ui-becas`): RED observed (33 new tests 0/33 passing, `RUTA_NO_ENCONTRADA` 404 !== 303; the committee-case gap was also proven RED by temporarily disabling the read), GREEN 483/483 on two consecutive full runs (450 + 33 new); `openspec validate e5s13 --strict` valid. Two existing assertions in `src/web/flujoComite.test.js` changed (queue link now `/comite/casos/:id`; the P12 test that asserted the student does NOT see the committee comment documented the known gap and now asserts the decision and comment ARE shown while the score is not). Parent independent real run (curl, 4 roles): landings student `/solicitudes`, committee `/comite`, direction `/direccion`; empty state "Aún no tiene una evaluación de beca" without error; HTML apply 303; status page shows `limitrofe en revisión` and NO score/`puntaje`/57.x and NO socioeconomic values; advisor and direction on the student page 403; committee queue lists the case; committee detail shows score + inputs; blank comment 400, no CSRF 403, advisor decision 403, `denegada` 303, decide again 409; the student's page then shows `denegada` and the comment with `<b>` escaped (no raw tag, no score); JSON `GET /api/becas/solicitudes/:id` now returns `clasificacion: denegada`, `decisionComite`, `comentarioComite`, no score; incomplete application lists "Promedio acumulado" and the `/completar` form; direction `/direccion` 200 and `/solicitudes` 403; SIGTERM exit 0.
+  - Design: new `vistasBecas.js`, `paginaProtegida.js` (shared wrapper: 401 -> `/login`, other 4xx render the error page), `paginasDireccion.js`; `servicioBecas.vistaParaEstudiante` reads the committee case for `limitrofe` applications and passes it to `consultarEstadoEvaluacion` (fixes HTML and JSON), returns `datosFaltantes` (field + category), new `listarMisSolicitudesBeca`; committee HTML screens `GET /comite`, `GET /comite/casos/:id`, `POST /comite/casos/:id/decision` (JSON API under `/api/comite` unchanged); student form requires only `periodoAcademico` (other fields optional so an incomplete application can be created from the page); `/login` redirects any logged-in user to their landing; the word "puntaje" never appears in student-facing copy; student login still lands on `/solicitudes`.
+  - Resolved from earlier notes: direction/committee login landing 403 gap; `denegada` not shown to the student.
+
 ## Next step
-T13 (P13, change `e5s13-...`) scholarship UI + student status page (2.3) + committee screens + a direction landing page, via delegated writer on a new branch stacked on `feat/e5s12-comite-becas`.
+T14 (P14, change `e5s14-...`) disbursement execution (3.2) via delegated writer on a new branch stacked on `feat/e5s13-ui-becas`.
