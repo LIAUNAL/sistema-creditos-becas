@@ -30,8 +30,8 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 - [x] T4 close wave 2: `npx un-specweaver close --done` — 3 archived, 0 failures. `validate --all --strict`: 6/10 pass; the 4 main specs (`solicitud-de-credito`, `desembolso-y-seguimiento`, `evaluacion-de-elegibilidad-para-becas`, `reportes-para-direccion-academica`) each fail only on the `[WARNING] Purpose section is still a placeholder` created by `archive`. Fix = write a real `## Purpose` in each `openspec/specs/*/spec.md` (product wording, pending).
 - [x] T5 e1s3 — slice S8 (wave 3)
 - [x] T6 e2s3 — slice S9 (wave 3)
-- [ ] T7 e3s3 — slice S10 (wave 3)
-- [ ] T8 `npx @fission-ai/openspec validate --all --strict` + close wave 3: `npx un-specweaver close --done`
+- [x] T7 e3s3 — slice S10 (wave 3)
+- [x] T8 close wave 3: `npx un-specweaver close --done` — 3 archived, 0 failures; `openspec/changes/` has no open changes left (all 11 stories done). `validate --all --strict`: 0/4 main specs pass, all only on the `Purpose` placeholder warning (see T4).
 
 ## Known cross-change risk
 - e3s2 introduces disbursement state `ejecutado`; e4s1 (archived) sums only state `desembolsado`, so the report total would stay 0. Do NOT edit e4s1 here; report it as a gap for the user (needs /sw:change or /sw:bug).
@@ -63,5 +63,10 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
   - Writer skipped the `graphify query` orientation step (project rule); read-only view over existing outputs, low impact.
   - Assumptions to confirm (spec silent): input `{idEstudiante, evaluacion:{idEstudiante, resultado, caso?}}`; `limitrofe` without a committee case or `en_revision_comite` shows `limitrofe en revisión`; after a committee decision `clasificacion` shows `otorgada`/`denegada` plus `decisionComite`/`comentarioComite`; `datosFaltantes: [{campo, categoria}]` (`academico`/`socioeconomico`) only when `datos_incompletos`; mismatched student throws `ErrorEvaluacionAjena`, missing evaluation `ErrorEvaluacionNoDisponible`; numeric score never exposed (epics note); inputs not mutated.
 
+- T6 commit 854ac0c (290 lines, medium, under budget).
+- T7 e3s3 (delegated writer): graphify oriented (22 nodes); RED observed (`Cannot find module './vencimientoDesembolso'`), GREEN 93/93 via `npm test`; `openspec validate e3s3 --strict` valid. New files in `src/desembolso/`; nothing existing edited, `src/reportes/` untouched.
+  - Assumptions to confirm (spec silent): overdue = `programado` and today strictly after `fecha + plazoConfirmacionDias` (default 15 from the story technical note; per-`tipoCredito` override, which 3.1 output lacks); only `programado` -> `vencido`; idempotent; invalid `fecha` skipped; today from injected `reloj` (UTC); mora count per period `{periodo: n}` plus `contarMoraPorPeriodo`; period read from `desembolso.periodoAcademico` or set from `opciones.periodoAcademico`; mutates in place; "confirmado" assumed = `ejecutado`; no scheduler (trigger not defined by spec).
+  - Integration gaps: 3.1 disbursements carry no `periodoAcademico`; 4.1 still sums only `desembolsado`, so `vencido` counts in 4.2 but 4.1 ignores both `ejecutado` and `vencido`.
+
 ## Next step
-T7 e3s3 on a new branch stacked on S9, then close wave 3.
+Assess S10, validate, close wave 3, final report. Pending user decisions: reconcile 4.1 `desembolsado` vs 3.2 `ejecutado`; real `## Purpose` in 4 main specs; confirm writers' spec assumptions; push + stacked PRs.

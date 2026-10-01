@@ -35,3 +35,16 @@ El sistema SHALL soportar revisión de casos limítrofes por el comité de becas
 - **GIVEN** un caso clasificado como `elegible` o `no_elegible` (no limítrofe)
 - **WHEN** se ejecuta el cálculo de elegibilidad
 - **THEN** el sistema no lo agrega a la cola del comité; la decisión queda automática
+
+### Requirement: Consulta del estado de evaluación por el estudiante
+El sistema SHALL soportar consulta del estado de evaluación por el estudiante.
+
+#### Scenario: Consulta su estado
+- **GIVEN** un estudiante con una evaluación de beca en curso
+- **WHEN** consulta su estado
+- **THEN** el sistema muestra la clasificación actual (`elegible`, `no_elegible`, `limitrofe en revisión` o `datos_incompletos`)
+
+#### Scenario: El estudiante consulta su estado
+- **GIVEN** una evaluación marcada como `datos_incompletos`
+- **WHEN** el estudiante consulta su estado
+- **THEN** el sistema indica cuáles datos académicos o socioeconómicos faltan por registrar
