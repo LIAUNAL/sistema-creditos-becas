@@ -243,6 +243,22 @@ th {
   white-space: nowrap;
 }
 
+.avisos {
+  list-style: none;
+  padding: 0;
+}
+
+.aviso {
+  border: 1px solid #767676;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 1rem;
+}
+
+.aviso-no-leido {
+  border-left-width: 6px;
+}
+
 .pie {
   max-width: 52rem;
   margin: 0 auto;

@@ -46,6 +46,13 @@ const etiquetaDocumento = (tipo) => ETIQUETAS_DOCUMENTO[tipo] ?? tipo;
 
 const campoCsrf = (csrf) => html`<input type="hidden" name="_csrf" value="${csrf}">`;
 
+// Story 5.16: estudiantes y comite ven el enlace a la bandeja con el contador de avisos sin leer (texto, no solo color).
+function enlaceAvisos(usuario) {
+  if (usuario.rol !== 'estudiante' && usuario.rol !== 'comite_becas') return '';
+  const sinLeer = Number(usuario.avisosNoLeidos ?? 0);
+  return html`<a href="/avisos">${sinLeer > 0 ? `Avisos (${sinLeer})` : 'Avisos'}</a>`;
+}
+
 function navegacion(usuario, csrf) {
   return html`<nav aria-label="Principal">
 ${usuario.rol === 'estudiante' ? html`<a href="/solicitudes">Mis solicitudes</a>
@@ -54,6 +61,7 @@ ${usuario.rol === 'estudiante' ? html`<a href="/solicitudes">Mis solicitudes</a>
 ${usuario.rol === 'asesor_financiero' ? html`<a href="/asesor/cola">Cola de revisión</a>` : ''}
 ${usuario.rol === 'comite_becas' ? html`<a href="/comite">Cola del comité</a>` : ''}
 ${usuario.rol === 'direccion_academica' ? html`<a href="/direccion">Inicio</a>` : ''}
+${enlaceAvisos(usuario)}
 <form method="post" action="/logout" class="en-linea">
 ${campoCsrf(csrf)}
 <button type="submit" class="boton-secundario">Cerrar sesión (${usuario.nombre_usuario})</button>
