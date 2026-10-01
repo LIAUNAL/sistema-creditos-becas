@@ -9,6 +9,7 @@ const migracion006 = require('./006-condiciones-desembolsos');
 const migracion007 = require('./007-becas');
 const migracion008 = require('./008-casos-comite');
 const migracion009 = require('./009-notificacion-desembolso-vencido');
+const migracion010 = require('./010-umbral-mora');
 
 // Lista ordenada por version. Las migraciones aplicadas no se editan: se agregan nuevas.
 const MIGRACIONES = [
@@ -21,6 +22,7 @@ const MIGRACIONES = [
   migracion007,
   migracion008,
   migracion009,
+  migracion010,
 ];
 
 module.exports = { MIGRACIONES };

@@ -34,12 +34,18 @@ const DOCUMENTOS = Object.freeze([
 
 // `reloj` (opcional): reloj inyectado, p. ej. uno mutable para probar la revision de vencidos.
 // `vencimientos` (opcional): `{ plazoConfirmacionDias, plazosPorTipoCredito }` de la revision (Story 5.15).
-async function levantarAplicacion({ reloj = crearRelojFijo(new Date('2026-05-04T12:30:00.000Z')), vencimientos } = {}) {
+// `umbralMoraDefecto` (opcional): umbral de mora de los periodos sin configuracion propia (Story 5.17).
+async function levantarAplicacion({
+  reloj = crearRelojFijo(new Date('2026-05-04T12:30:00.000Z')),
+  vencimientos,
+  umbralMoraDefecto,
+} = {}) {
   const db = abrirBaseDeDatos({ ruta: ':memory:' });
   ejecutarMigraciones(db);
   await sembrarUsuarios({ db, entorno: CLAVES });
   const csrf = crearCsrf({ secreto: 'secreto-de-prueba-0123456789' });
-  const aplicacion = crearAplicacionWeb({ db, reloj, csrf, vencimientos });
+  const reportes = umbralMoraDefecto === undefined ? undefined : { umbralMoraDefecto };
+  const aplicacion = crearAplicacionWeb({ db, reloj, csrf, vencimientos, reportes });
   const servidor = await iniciarServidor({ puerto: 0, rutas: aplicacion.rutas, ...aplicacion.opcionesServidor });
   return {
     db,

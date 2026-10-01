@@ -60,7 +60,8 @@ ${usuario.rol === 'estudiante' ? html`<a href="/solicitudes">Mis solicitudes</a>
 <a href="/becas">Mis becas</a>` : ''}
 ${usuario.rol === 'asesor_financiero' ? html`<a href="/asesor/cola">Cola de revisión</a>` : ''}
 ${usuario.rol === 'comite_becas' ? html`<a href="/comite">Cola del comité</a>` : ''}
-${usuario.rol === 'direccion_academica' ? html`<a href="/direccion">Inicio</a>` : ''}
+${usuario.rol === 'direccion_academica' ? html`<a href="/direccion">Inicio</a>
+<a href="/direccion/reportes">Reportes</a>` : ''}
 ${enlaceAvisos(usuario)}
 <form method="post" action="/logout" class="en-linea">
 ${campoCsrf(csrf)}
