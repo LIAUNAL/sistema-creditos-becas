@@ -26,7 +26,7 @@ const CAMPOS_SOCIOECONOMICOS_OBLIGATORIOS = [
 
 const CAMPOS_IDENTIDAD_OBLIGATORIOS = ['estudianteId', 'periodoAcademico'];
 
-const ESTADOS_ACTIVOS = new Set(['borrador', 'enviada', 'en_revision', 'aprobada']);
+const ESTADOS_ACTIVOS = new Set(['borrador', 'enviada', 'pendiente_revision', 'en_revision', 'aprobada']);
 
 class ErrorCamposFaltantes extends Error {
   constructor(camposFaltantes) {

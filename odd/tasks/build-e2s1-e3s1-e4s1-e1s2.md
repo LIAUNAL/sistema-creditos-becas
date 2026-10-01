@@ -25,8 +25,8 @@ Implement four OpenSpec changes via `/sw:build`, one at a time, each with a test
 - [x] T1 e2s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2) — commit eab985a
 - [x] T2 e3s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
 - [x] T3 e4s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
-- [ ] T4 e1s2 — implement + tests (spec tasks 1.1-1.3, 2.1-2.3)
-- [ ] T5 validate: `npx @fission-ai/openspec validate --all --strict`
+- [x] T4 e1s2 — implement + tests (spec tasks 1.1-1.3, 2.1-2.3)
+- [~] T5 validate: `npx @fission-ai/openspec validate --all --strict` — 10/11 pass; only `spec/solicitud-de-credito` fails (pre-existing placeholder Purpose warning in the main spec from Story 1.1, outside this scope)
 - [ ] T6 close each story: `npx un-specweaver close <change-id>`
 
 ## Acceptance
@@ -42,6 +42,9 @@ Implement four OpenSpec changes via `/sw:build`, one at a time, each with a test
 
 - T3 (delegated writer): RED observed (`Cannot find module './reporteConsolidado'`), GREEN 38/38 via `npm test`; `openspec validate e4s1 --strict` valid.
   - Assumptions to confirm (spec silent): input shapes `solicitudes {id, periodoAcademico, estado}`, `becas {periodoAcademico, estado}`, `desembolsos {solicitudId, monto, estado}`; credits = `aprobada`, becas = `otorgada` (counts); disbursed amount sums only state `desembolsado`, which no story emits yet (3.1 only emits `programado`), so the total will read 0 until a disbursement story defines it; desembolso period comes from its solicitud; centavo-exact sums; no input validation; unknown period/empty arrays give zeros.
+
+- T4 (delegated writer): RED observed (`MODULE_NOT_FOUND` for `./envioSolicitud`), GREEN 47/47 via `npm test`; `openspec validate e1s2 --strict` valid. Extends `src/solicitud-credito/`; one additive edit to `registroSolicitudCredito.js` (`pendiente_revision` added to `ESTADOS_ACTIVOS`; graphify showed no other consumers).
+  - Assumptions to confirm (spec silent): required docs `identificacion`, `certificado_ingresos`, `certificado_matricula` (configurable); formats `pdf/jpg/jpeg/png` (configurable, by extension); notification port `notificador.notificarEnvio({estudianteId, solicitudId, estado})`; upload is a separate step from submit; same doc type re-upload replaces; non-`borrador` state throws `ErrorEstadoInvalido`; no file content/size check.
 
 ## Delivery
 - Strategy: `stacked-to-main` (chosen by user). One PR per change, stacked in order.
