@@ -33,7 +33,10 @@ Implement wave 2 OpenSpec changes via `/sw:build`, one at a time, each with a te
 - [x] T7 e3s3 — slice S10 (wave 3)
 - [x] T8 close wave 3: `npx un-specweaver close --done` — 3 archived, 0 failures; `openspec/changes/` has no open changes left (all 11 stories done). `validate --all --strict`: 0/4 main specs pass, all only on the `Purpose` placeholder warning (see T4).
 
-## Known cross-change risk
+## Resolved: 4.1 `desembolsado` vs 3.2 `ejecutado` (via /sw:bug)
+- Classified as a defect (spec correct: report must show "monto total desembolsado"; `desembolsado` is defined by no spec/story, `ejecutado` is). Fixed on branch `fix/reporte-monto-desembolsado-ejecutado`, commit 17f411d (88 changed lines, medium, under budget) with a real-module integration test (calendar -> execute -> report; `programado`/`vencido` excluded; RED `actual 0, expected 500.01`). Change archived as `2026-10-01-fix-reporte-monto-desembolsado-ejecutado` with `.openspec.yaml` `schema: spec-driven` + `skip_specs: true` (OpenSpec requires it for a change with no spec delta). npm test 94/94.
+
+## Known cross-change risk (historical, now resolved above)
 - e3s2 introduces disbursement state `ejecutado`; e4s1 (archived) sums only state `desembolsado`, so the report total would stay 0. Do NOT edit e4s1 here; report it as a gap for the user (needs /sw:change or /sw:bug).
 
 ## Acceptance
