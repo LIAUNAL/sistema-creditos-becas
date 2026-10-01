@@ -22,7 +22,7 @@ Implement four OpenSpec changes via `/sw:build`, one at a time, each with a test
 - Route: delegated direct, one writer per change (trigger: writer trigger, 2+ non-trivial files per change).
 
 ## Tasks
-- [ ] T1 e2s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
+- [x] T1 e2s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2) — commit eab985a
 - [ ] T2 e3s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
 - [ ] T3 e4s1 — implement + tests (spec tasks 1.1, 1.2, 2.1, 2.2)
 - [ ] T4 e1s2 — implement + tests (spec tasks 1.1-1.3, 2.1-2.3)
@@ -33,7 +33,8 @@ Implement four OpenSpec changes via `/sw:build`, one at a time, each with a test
 - `npm test` green; openspec validate strict passes; tasks.md checkboxes match reality.
 
 ## Progress / evidence
-(none yet)
+- T1 (delegated writer): RED observed (test module missing), GREEN 20/20 via `npm test`; `openspec validate e2s1 --strict` valid. Commit eab985a.
+  - Spec gaps the writer resolved by assumption (need product confirmation): score formula (weights/scales/thresholds as config inputs), lower estrato/ingresos = higher need, score == threshold goes to higher category, missing estrato/ingresos also = `datos_incompletos`, return shape `{puntaje, clasificacion, decisionAutomatica, camposFaltantes}`, invalid config throws `ErrorConfiguracionInvalida`.
 
 ## Next step
-T1 via delegated writer.
+T2 via delegated writer.
