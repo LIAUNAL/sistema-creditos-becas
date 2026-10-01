@@ -6,33 +6,22 @@ const { ejecutarMigraciones } = require('../infra/migraciones');
 const { crearAuditoria } = require('../infra/auditoria');
 const { relojSistema } = require('../infra/reloj');
 const { crearAplicacionWeb } = require('./aplicacionWeb');
-const { crearCsrf } = require('./csrf');
-const { umbralMoraDesdeEntorno } = require('../app/servicioReportes');
-const { iniciarPlanificadorVencimientos, intervaloDesdeEntorno } = require('../infra/planificador');
+const { leerConfiguracion } = require('./configuracion');
+const { iniciarPlanificadorVencimientos } = require('../infra/planificador');
 
 async function main() {
-  const puerto = Number.parseInt(process.env.PORT ?? '3000', 10);
-  if (!Number.isInteger(puerto) || puerto < 1 || puerto > 65535) {
-    throw new Error(`PORT inválido: ${process.env.PORT}`);
-  }
+  // Story 5.18: toda la configuracion se valida ANTES de abrir la base o el puerto (PORT, CSRF_SECRET,
+  // VENCIMIENTOS_*, UMBRAL_MORA_DEFECTO). Un valor invalido sale con codigo 1 sin haber escuchado.
+  const configuracion = leerConfiguracion(process.env);
+  const { puerto, csrf, vencimientos, reportes } = configuracion;
 
   const db = abrirBaseDeDatos(); // usa DB_PATH
   ejecutarMigraciones(db);
   const auditoria = crearAuditoria({ db, reloj: relojSistema });
-  const csrf = crearCsrf(); // usa CSRF_SECRET
   if (csrf.usaSecretoAleatorio) {
     console.warn('CSRF_SECRET no definido: secreto aleatorio por proceso (solo una instancia; los tokens caducan al reiniciar)');
   }
-  // Identidad + casos de uso (repositorios SQLite, colector, modulos reales) + paginas del estudiante.
-  // Story 5.15: plazo de confirmacion de desembolsos (VENCIMIENTOS_PLAZO_DIAS, por defecto 15 dias).
-  const plazoDias = process.env.VENCIMIENTOS_PLAZO_DIAS;
-  let vencimientos;
-  if (plazoDias !== undefined && plazoDias !== '') {
-    if (!/^\d+$/.test(plazoDias)) throw new Error(`VENCIMIENTOS_PLAZO_DIAS inválido: ${plazoDias} (entero de días)`);
-    vencimientos = { plazoConfirmacionDias: Number(plazoDias) };
-  }
-  // Story 5.17: umbral de mora por defecto (UMBRAL_MORA_DEFECTO, fraccion entre 0 y 1; por defecto 0.10).
-  const reportes = { umbralMoraDefecto: umbralMoraDesdeEntorno(process.env.UMBRAL_MORA_DEFECTO) };
+  // Identidad + casos de uso (repositorios SQLite, colector, modulos reales) + paginas.
   const aplicacion = crearAplicacionWeb({ db, reloj: relojSistema, csrf, auditoria, vencimientos, reportes });
 
   const { puerto: escucha, cerrar } = await iniciarServidor({
@@ -50,8 +39,8 @@ async function main() {
       const { marcados } = await aplicacion.contexto.servicioVencimientos.revisarVencimientos();
       if (marcados > 0) console.log(`Revisión de vencidos: ${marcados} desembolso(s) marcado(s) como vencido(s)`);
     },
-    intervaloMs: intervaloDesdeEntorno(process.env.VENCIMIENTOS_INTERVALO_MS),
-    ejecutarAlIniciar: process.env.VENCIMIENTOS_AL_INICIAR !== 'false',
+    intervaloMs: configuracion.intervaloVencimientosMs,
+    ejecutarAlIniciar: configuracion.revisarVencimientosAlIniciar,
     alError: (error) => console.error('Revisión de vencidos fallida:', error.message),
   });
 

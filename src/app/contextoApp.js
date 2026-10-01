@@ -16,7 +16,7 @@ const { RegistroSolicitudCredito } = require('../solicitud-credito/registroSolic
 const { EnvioSolicitudCredito } = require('../solicitud-credito/envioSolicitud');
 const { DecisionAsesorFinanciero } = require('../solicitud-credito/decisionAsesor');
 // Las politicas de visibilidad (P5) viven en la capa web; son funciones puras sobre asignaciones.
-const { crearPoliticas } = require('../web/politicas');
+const { crearPoliticas } = require('./politicas');
 const { crearServicioSolicitudes } = require('./servicioSolicitudes');
 const { crearServicioAsesor, crearServicioDireccion } = require('./servicioAsesor');
 const { crearServicioCondiciones, MAXIMO_CUOTAS } = require('./servicioCondiciones');

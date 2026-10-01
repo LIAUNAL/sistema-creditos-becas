@@ -51,6 +51,8 @@ async function levantarAplicacion({
     db,
     reloj,
     contexto: aplicacion.contexto,
+    // Rutas registradas (`[metodo, patron, manejador]`) sin `/health`, que agrega `crearServidor` (Story 5.18).
+    rutas: aplicacion.rutas,
     base: `http://127.0.0.1:${servidor.puerto}`,
     cerrar: async () => {
       await servidor.cerrar();
