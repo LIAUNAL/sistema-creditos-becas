@@ -1,6 +1,7 @@
 'use strict';
 
 const { randomUUID } = require('node:crypto');
+const { crearRepositorioSolicitudesEnMemoria } = require('./repositoriosEnMemoria');
 
 /**
  * Story 1.1 (Epic 1: Solicitud de crédito)
@@ -25,8 +26,6 @@ const CAMPOS_SOCIOECONOMICOS_OBLIGATORIOS = [
 ];
 
 const CAMPOS_IDENTIDAD_OBLIGATORIOS = ['estudianteId', 'periodoAcademico'];
-
-const ESTADOS_ACTIVOS = new Set(['borrador', 'enviada', 'pendiente_revision', 'en_revision', 'aprobada']);
 
 class ErrorCamposFaltantes extends Error {
   constructor(camposFaltantes) {
@@ -62,25 +61,20 @@ function camposFaltantesEn(datos) {
 }
 
 class RegistroSolicitudCredito {
-  constructor() {
-    /** @type {Map<string, object>} id -> solicitud */
-    this._solicitudes = new Map();
+  /**
+   * @param {object} [opciones]
+   * @param {object} [opciones.repositorio] puerto de solicitudes (ver repositoriosEnMemoria.js);
+   *   por defecto, una implementación en memoria con el comportamiento previo.
+   */
+  constructor({ repositorio } = {}) {
+    this._repositorio = repositorio ?? crearRepositorioSolicitudesEnMemoria();
   }
 
   /**
-   * @returns {object[]} solicitudes activas del estudiante para el periodo dado
+   * @returns {object|undefined} la solicitud activa del estudiante para el periodo dado
    */
   buscarActivaPorEstudianteYPeriodo(estudianteId, periodoAcademico) {
-    for (const solicitud of this._solicitudes.values()) {
-      if (
-        solicitud.estudianteId === estudianteId &&
-        solicitud.periodoAcademico === periodoAcademico &&
-        ESTADOS_ACTIVOS.has(solicitud.estado)
-      ) {
-        return solicitud;
-      }
-    }
-    return undefined;
+    return this._repositorio.buscarActivaPorEstudianteYPeriodo(estudianteId, periodoAcademico);
   }
 
   /**
@@ -123,12 +117,12 @@ class RegistroSolicitudCredito {
       creadaEn: new Date().toISOString(),
     };
 
-    this._solicitudes.set(solicitud.id, solicitud);
+    this._repositorio.guardar(solicitud);
     return solicitud;
   }
 
   obtener(id) {
-    return this._solicitudes.get(id);
+    return this._repositorio.obtener(id);
   }
 }
 

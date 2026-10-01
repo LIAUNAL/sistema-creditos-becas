@@ -16,6 +16,8 @@
  * `notificador.notificarDecision(notificacion)`.
  */
 
+const { crearRepositorioDecisionesEnMemoria } = require('./repositoriosEnMemoria');
+
 const ESTADO_PENDIENTE_REVISION = 'pendiente_revision';
 const ESTADO_APROBADA = 'aprobada';
 const ESTADO_RECHAZADA = 'rechazada';
@@ -57,15 +59,14 @@ class DecisionAsesorFinanciero {
    * @param {{ notificarDecision: (notificacion: object) => void }} dependencias.notificador puerto de notificación
    * @param {function(): Date} [dependencias.reloj]
    */
-  constructor({ registro, notificador, reloj = () => new Date() }) {
+  constructor({ registro, notificador, reloj = () => new Date(), repositorio }) {
     if (!notificador || typeof notificador.notificarDecision !== 'function') {
       throw new TypeError('Se requiere un notificador con notificarDecision');
     }
     this.registro = registro;
     this._notificador = notificador;
     this._reloj = reloj;
-    /** @type {Map<string, object>} solicitudId -> decisión registrada */
-    this._decisiones = new Map();
+    this._repositorio = repositorio ?? crearRepositorioDecisionesEnMemoria();
   }
 
   _solicitudEnRevision(solicitudId) {
@@ -79,7 +80,7 @@ class DecisionAsesorFinanciero {
 
   _decidir(solicitud, estado, decision) {
     solicitud.estado = estado;
-    this._decisiones.set(solicitud.id, decision);
+    this._repositorio.guardarDecision(solicitud.id, decision);
     this._notificador.notificarDecision({
       estudianteId: solicitud.estudianteId,
       solicitudId: solicitud.id,
@@ -128,7 +129,7 @@ class DecisionAsesorFinanciero {
    *   `undefined` si la solicitud aún no tiene decisión.
    */
   consultarHistorial(solicitudId) {
-    const decision = this._decisiones.get(solicitudId);
+    const decision = this._repositorio.obtenerDecision(solicitudId);
     if (!decision) return undefined;
     return {
       solicitudId,
